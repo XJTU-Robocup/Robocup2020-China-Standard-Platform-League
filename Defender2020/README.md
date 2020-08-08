@@ -6,4 +6,5 @@
 * 视觉：范博煜
 * 动作：赖启平
 
-* 思维导图 [后卫2020策略逻辑](https://mm.edrawsoft.cn/map.html?code=4xxTpTk47A)
+* 思维导图 [后卫2020策略逻辑](https://www.edrawsoft.cn/viewer/public/s/7bf06767824998)
+* 或参与编辑[协助编辑](https://mm.edrawsoft.cn/map.html?code=BVBXrrB4if)
