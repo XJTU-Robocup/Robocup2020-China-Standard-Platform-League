@@ -7,4 +7,4 @@
 * 动作：赖启平
 
 * 思维导图 [后卫2020策略逻辑](https://www.edrawsoft.cn/viewer/public/s/7bf06767824998)
-* 或参与编辑[协助编辑](https://mm.edrawsoft.cn/map.html?code=BVBXrrB4if)
+* 或观看更多细节的导图、并可参与编辑 [协助编辑](https://mm.edrawsoft.cn/map.html?code=BVBXrrB4if)
