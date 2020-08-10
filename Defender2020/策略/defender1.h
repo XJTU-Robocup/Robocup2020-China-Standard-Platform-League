@@ -1,4 +1,4 @@
-//parameter　↓↓↓`3:47
+//parameter　↓↓↓`21:44
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -492,9 +492,8 @@ option(defender1)
 			if(std::abs(rBall.norm()) > 600.f)
 				goto walkToBall;
 				
-			if(theLibCodeRelease.between(rBall.y(), -30.f, 20.f)
-				&& theLibCodeRelease.between(rBall.x(), 140.f, 175.f))
-				goto rescueKick;
+			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f)
+				goto alignToRescue;
 		}
 		
 		action
@@ -575,6 +574,32 @@ option(defender1)
 		}
 		
 	}
+
+	state(alignToRescue)
+	{
+
+		transition
+		{
+			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+				goto patrolToHind;
+				
+			if(theLibCodeRelease.between(rBall.y(), 35.f, 55.f)
+				&& theLibCodeRelease.between(rBall.x(), 140.f, 175.f))
+				goto rescueKick;
+			
+			if(std::abs(rBall.norm()) > 600.f)
+				goto prepareToRescue;
+		}
+
+		action
+		{
+			HeadControlMode(HeadControl::lookForward);
+			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
+			theHeadControlMode = HeadControl::lookForward;
+			WalkToTarget(Pose2f(20.f, 20.f, 20.f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y() - 42.f));
+		}
+
+	}
 	
 	state(rescueKick)
 	{
@@ -613,7 +638,3 @@ option(defender1)
   }
 
 }
-
-
-
-
