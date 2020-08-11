@@ -1,4 +1,4 @@
-//parameter　↓↓↓`21:44
+//parameter　↓↓↓`8/11 4:13` @author:dyl
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -9,13 +9,15 @@ const Vector2f midLeft = Vector2f(0.f, 3000.f);
 const Vector2f backLeft = Vector2f(-4500.f, 3000.f);
 const Vector2f backMid = Vector2f(-4500.f, 0.f);
 const Vector2f backRight = Vector2f(-4500.f, -3000.f);
+const Vector2f globalPatrolHind = Vector2f(-3400.f,500.f);
+const Vector2f globalPatrolFront = Vector2f(-3400.f,-500.f);
 //basic parameters of ball and robots:
 Vector2f rBall;	//i.e. relative ball
 Vector2f gBall;	 //i.e. global ball
 Vector2f selfLocation;
 //basic parameters of defending strategies:
-const Vector2f patrolHind = Transformation::fieldToRobot(theRobotPose,Vector2f(-3400.f,500.f));
-const Vector2f patrolFront = Transformation::fieldToRobot(theRobotPose,Vector2f(-3400.f,-500.f));
+Vector2f patrolHind;
+Vector2f patrolFront;
 //basic areas of the field: (--> judge which strategy to take)
 struct Area{
 	
@@ -222,6 +224,8 @@ option(defender1)
 	rBall = theBallModel.estimate.position;	//i.e. relative ball
 	gBall = Transformation::robotToField(theRobotPose, rBall);	 //i.e. global ball
 	selfLocation = theRobotPose.translation;
+	patrolHind = Transformation::fieldToRobot(theRobotPose, globalPatrolHind);
+	patrolFront = Transformation::fieldToRobot(theRobotPose,globalPatrolFront);
 	initial_state(start)
  	{
 	  
@@ -235,6 +239,23 @@ option(defender1)
 		{
 			HeadControlMode(HeadControl::lookForward);
 			Stand();
+		}
+		
+	}
+	
+	state(restart)
+	{
+		
+		transition
+		{
+			if(state_time > 4000.f)
+				goto searchForBall;
+		}
+		
+		action
+		{
+			HeadControlMode(HeadControl::lookForward);
+			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(0_deg, 1000.f,0));
 		}
 		
 	}
@@ -281,16 +302,18 @@ option(defender1)
 			
 			if(patrolHind.norm() >= 200.f)
 			{
+				OUTPUT_TEXT(patrolHind.norm());
 				//HeadControlMode(HeadControl::lookForward);
 				Pose2f target;
 				target.rotation = std::abs(patrolHind.angle());
-				target.translation = Vector2f(-3800.f,-600.f);
+				target.translation = globalPatrolHind;
 				Vector2f rtarget = Transformation::fieldToRobot(theRobotPose,target.translation);
 				WalkToTarget(Pose2f(0.8f,0.8f,0.8f),Pose2f(0.f,rtarget));
 				//theMotionRequest = thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
 			}
 			else //看向球之后站立
 			{
+				OUTPUT_TEXT("yes");
 				LookAtBall();
 				if(std::abs(rBall.angle()) >= 5_deg)
 				{
@@ -325,6 +348,7 @@ option(defender1)
 				
 			if(std::abs(rBall.norm()) < 600.f)
 				goto prepareToPass;
+				
 			if(judgePosition(gBall,walkToBallArea) && (gBall.x() < selfLocation.x()))
 				goto walkToBall;
 		}
@@ -409,7 +433,7 @@ option(defender1)
 			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) > 600.f)
 				goto prepareToPass;
 				
-			if(std::abs(toRobot(getNearestOpp()).norm()) <= 600.f && std::abs(rBall.norm()) < 600.f)
+			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) <= 600.f)
 				goto prepareToRescue;
 		}
 		
@@ -526,7 +550,7 @@ option(defender1)
 			if(std::abs(rBall.norm()) > 600.f)
 				goto walkToBall;
 				
-			if(theLibCodeRelease.between(rBall.y(), -30.f, 20.f)
+			if(theLibCodeRelease.between(rBall.y(), 35.f, 55.f)
 				&& theLibCodeRelease.between(rBall.x(), 140.f, 175.f))
 				goto rescueKick;
 		}
@@ -536,7 +560,7 @@ option(defender1)
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
 			theHeadControlMode = HeadControl::lookForward;
-			WalkToTarget(Pose2f(40.f, 40.f, 40.f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y()));
+			WalkToTarget(Pose2f(40.f, 40.f, 40.f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y()-42.f));
 		}
 		
 	}
@@ -607,7 +631,7 @@ option(defender1)
 		transition
 		{
 			if(state_time > 3000 || (state_time > 10 && action_done))
-				goto patrolToHind;
+				goto restart;
 		}
 		
 		action
@@ -625,8 +649,9 @@ option(defender1)
 		
 		transition
 		{
-			if(state_time > 3000 || (state_time > 10 && action_done))
-				goto patrolToHind;
+			if(state_time > 4000 || (state_time > 10 && action_done))
+				goto restart;
+			//OUTPUT_TEXT(action_done);
 		}
 		
 		action
