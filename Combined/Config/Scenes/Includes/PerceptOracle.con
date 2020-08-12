@@ -1,0 +1,67 @@
+# Configuration for simulation scenes with oracled percepts
+
+# Activate simulation time
+st on
+
+# Only a single robot displays game state
+dr debugDrawing3d:representation:GameInfo
+dr debugDrawing3d:representation:TeamInfo
+
+# In case we have more than a single robot
+robot all
+
+# Ground truth modules
+mr GroundTruthWorldState CognitionLogDataProvider
+mr GroundTruthRobotPose OracledWorldModelProvider
+mr GroundTruthBallModel OracledWorldModelProvider
+
+# Field views need ground truth and some later deactivated modules
+call Includes/FieldViews
+
+# Deactivate unused modules
+mr RobotHealth default
+
+# Switch to percept oracle or off
+mr AutoExposureWeightTable off
+mr ECImage default
+mr ObstaclesImagePercept OracledPerceptsProvider
+mr ObstaclesFieldPercept OracledPerceptsProvider
+mr LinesPercept OracledPerceptsProvider
+mr CirclePercept OracledPerceptsProvider
+mr BallPercept OracledPerceptsProvider
+mr FieldBoundary OracledPerceptsProvider
+mr PenaltyMarkPercept OracledPerceptsProvider
+mr GoalFrame default
+mr CNSImage off
+mr CNSRegions off
+mr BallRegions off
+mr ConfirmedBallSpot off
+mr CNSPenaltyMarkRegions off
+mr PenaltyMarkSpots off
+mr PenaltyMarkRegions off
+mr BallSpots off
+mr ColorScanlineRegionsHorizontal off
+mr ColorScanlineRegionsVerticalClipped off
+mr ColorScanlineRegionsVertical default
+mr ScanGrid off
+mr Thumbnail off
+mr ECImage off
+mr Image default
+
+# Select modules for simulator
+mr CameraInfo CognitionLogDataProvider
+mr FrameInfo CognitionLogDataProvider
+mr JointSensorData MotionLogDataProvider
+mr InertialSensorData MotionLogDataProvider
+mr KeyStates MotionLogDataProvider
+mr FrameInfo MotionLogDataProvider
+mr FieldFeatureOverview default
+
+# Fast, because we do not compute images
+ci off
+
+call Includes/DebugResponses
+call Includes/GameStates
+
+dr debugDrawing3d:representation:RobotPose
+dr debugDrawing3d:representation:SideConfidence
