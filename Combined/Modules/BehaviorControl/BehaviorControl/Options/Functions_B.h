@@ -164,3 +164,67 @@ int modeDecision2()
 		return 3;
 	 */
 }
+
+int modeDecision22()
+{   //找球模式
+	if(globalRobot2().x()>1800.f || globalRobot2().x()<-1800.f
+	  || globalRobot2().y()<100.f || globalRobot2().y()>3000.f)
+		return 3;
+	if(globalBall2().x()>1800.f || globalBall2().x()<-1800.f
+	  || globalBall2().y()<100.f || globalBall2().y()>3000.f)
+		return 3;
+	if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
+		return 0;
+	if(globalBall2().x()<=1800.f && globalBall2().x()>=-1800.f
+	  && globalBall2().y()>=100.f && globalBall2().y()<=3000.f
+	  && theBallModel.estimate.position.norm()>450.f)
+		return 2;
+	if(globalBall2().x()<=1800.f && globalBall2().x()>=-1800.f
+	  && globalBall2().y()>=100.f && globalBall2().y()<=3000.f
+	  && theBallModel.estimate.position.norm()<=450.f)
+		return 1;    
+	  /*
+	  bool teamGotBall = false;//判断队伍是否拿球
+	  //计算队伍和敌人离球的最近距离
+	  float lenTeam = Inf;
+	  float lenOppo = Inf;
+	  size_t i;
+	  for( i=0;i<o.size();i++)
+		{
+		   if(o[i].type == Obstacle::teammate && o[i].center.norm()<lenTeam)
+				lenTeam = o[i].center.norm();
+		   if(o[i].type == Obstacle::opponent && o[i].center.norm()<lenOppo)
+				lenOppo = o[i].center.norm();
+		}
+	  if(lenTeam < lenOppo && lenOppo-lenTeam >200.f && lenTeam < 500.f)
+		teamGotBall = true;//队友持球
+	  */
+	  //如果球在防区时，进入防御模式：截球
+	  //如果球不在防区内
+	  /*
+	  //计算球离防区边界四点最近距离
+	  float lenField = inf;
+	  float len1 = Vector2f(globalBall2.x()-3000.f, globalBall2.y()).norm();
+	  float len2 = Vector2f(globalBall2.x()-3000.f, globalBall2.y()+1500.f).norm();
+	  float len3 = Vector2f(globalBall2.x()+3000.f, globalBall2.y()).norm();
+	  float len4 = Vector2f(globalBall2.x()+3000.f, globalBall2.y()+1500.f).norm();
+	  if(len1 < lenField)
+		  lenField = len1;
+	  if(len2 < lenField)
+		  lenField = len2;
+	  if(len3 < lenField)
+		  lenField = len3;
+	  if(len4 < lenField)
+		  lenField = len4;
+	  */
+	  //如果球不在防区，回到场地中央
+	  /*if(lenTeam < lenOppo && lenTeam < 500.f)
+		return 3;
+	  /如果球不在防区，回到场地中央
+	  if(lenTeam < lenOppo && (lenTeam > 500.f || lenField < 1000.f))
+		return 3;
+	  //如果球不在防区，回到场地中央
+	  if(lenTeam >= lenOppo)
+		return 3;
+	 */
+}

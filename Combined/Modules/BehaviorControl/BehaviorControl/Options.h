@@ -31,6 +31,7 @@
 #include "Options/Roles/GK.h"
 #include "Options/Roles/Try.h"
 #include "Options/Roles/M.h"
+#include "Options/Roles/LM.h"
 
 #include "Options/Skills/GetUp.h"
 

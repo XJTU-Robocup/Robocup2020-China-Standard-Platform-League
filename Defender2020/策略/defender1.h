@@ -217,6 +217,8 @@ bool ifAnyOppInArea(Area a){　//area
 	return jud;
 	//judge if there are any opponent in the particular area.
 }
+
+
 //返回是否有传球角度。若存在传球角度，将最优角度传给参数passAngle
 bool getPassAngle(float& passAngle)
 { 
@@ -310,7 +312,6 @@ bool getPassAngle(float& passAngle)
 	*/
   return !candidateOne.empty();
 }
-
 
 option(defender1)
 {

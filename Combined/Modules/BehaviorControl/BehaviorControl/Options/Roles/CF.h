@@ -25,7 +25,7 @@ option(CF)
 	initial_state(BeiDou)
 	{
 		transition{
-		    if(state_time>5000)
+		    if(state_time>2000)
 				goto start;
 		}
 		action{
