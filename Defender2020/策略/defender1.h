@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/13 3:35`
+//parameter　↓↓↓`8/11 4:45`
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -37,6 +37,7 @@ Area globalBallSafeArea = {frontLeft, frontRight, midLeft, midRight};
 Area rightHalfCourt = {midMid, midRight, backMid, backRight};
 Area leftHalfCourt = {midLeft, midMid, backLeft, backMid};
 Area penaltyBox = {Vector2f(-3900.f, 1100.f), Vector2f(-3900.f, -1100.f), Vector2f(-4500.f, 1100.f), Vector2f(-4500.f, -1100.f)};
+Area keeperArea = {Vector2f(-3400.f, 1500.f), Vector2f(-3400.f, -1500.f), Vector2f(-4500.f, 1500.f), Vector2f(-4500.f, -1500.f)};
 //advanced parameters of players on the field:
 std::vector<Obstacle> obstacle;
 //std::vector<Teammate> teammate = theTeamData.teammates;
@@ -268,10 +269,13 @@ option(defender1)
 		{
 			if(theLibCodeRelease.timeSinceBallWasSeen<300)
 				goto patrolToHind;	
+			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
+				goto defendOpponent;
 		}
 		
 		action
 		{
+			Stand();
 			LookRound();
 			if(state_time > 3000)
 			{
@@ -290,15 +294,19 @@ option(defender1)
 			if(ifBallLoseSight())
 				goto searchForBall;
 			
-			if(judgePosition(gBall,	defendBallArea))
+			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
 				goto defendBall;
 			
 			if(judgePosition(gBall, globalBallSafeArea) && ifAnyOppInArea(defendOpponentArea))
+				goto defendOpponent;
+				
+			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
 				goto defendOpponent;
 		}
 		
 		action
 		{
+			OUTPUT_TEXT(!ifAnyOppInArea(defendOpponentArea));
 			if(gBall.y() > 0)
 				patrolPoint = patrolLeft;
 			else
@@ -306,7 +314,7 @@ option(defender1)
 			
 			if(patrolPoint.norm() >= 200.f)
 			{
-				OUTPUT_TEXT(patrolPoint.norm());
+				//OUTPUT_TEXT(patrolPoint.norm());
 				//HeadControlMode(HeadControl::lookForward);
 				Pose2f target;
 				target.rotation = std::abs(patrolPoint.angle());
@@ -317,7 +325,7 @@ option(defender1)
 			}
 			else //看向球之后站立
 			{
-				OUTPUT_TEXT("yes");
+				//OUTPUT_TEXT("yes");
 				LookAtBall();
 				if(std::abs(rBall.angle()) >= 5_deg)
 				{
@@ -384,10 +392,10 @@ option(defender1)
 		
 		transition
 		{
-			if(ifBallLoseSight())
+			if(theLibCodeRelease.timeSinceBallWasSeen >12000)
 				goto searchForBall;
 			
-			if(judgePosition(gBall,	defendBallArea))
+			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
 				goto defendBall;
 
 			if(judgePosition(gBall, globalBallSafeArea) && !ifAnyOppInArea(defendOpponentArea))
@@ -397,7 +405,7 @@ option(defender1)
 		action
 		{
 			Vector2f dop = getNearestOppInArea(defendOpponentArea);
-			dop = Vector2f(dop.x()-100.f, dop.y());
+			dop = Vector2f(dop.x()-80.f, dop.y());
 			Pose2f target;				
 			target.rotation = toRobot(dop).angle();
 			target.translation = dop;
@@ -432,6 +440,11 @@ option(defender1)
 			if(!ifAnyOppSeen())
 				goto prepareToPass;
 			*/
+			if(judgePosition(gBall, keeperArea) && !ifAnyOppInArea(defendOpponentArea))
+				goto patrolToHind;
+				
+			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
+				goto defendOpponent;
 				
 			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) > 600.f)
 				goto prepareToPass;
@@ -441,7 +454,8 @@ option(defender1)
 		}
 		
 		action
-		{
+		{	
+	
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
 		
@@ -451,6 +465,7 @@ option(defender1)
 			theMotionRequest=thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
 			
 			HeadControlMode(HeadControl::lookForward);
+			
 		}
 		
 	}
