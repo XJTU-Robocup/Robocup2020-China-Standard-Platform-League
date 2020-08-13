@@ -12,12 +12,15 @@ option(PlayingState)
 				//Try();
 				break;
 			case 2:
-				CF();
+				LM();
 				break;
 			case 3:
-				GK();
+				CF();
 				break;
 			case 4:
+				GK();
+				break;
+			case 5:
 				CB();
 				break;
 			default:

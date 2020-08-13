@@ -1,4 +1,4 @@
-//parameter　↓↓↓`21:44
+//parameter　↓↓↓`8/11 4:45`
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -9,16 +9,20 @@ const Vector2f midLeft = Vector2f(0.f, 3000.f);
 const Vector2f backLeft = Vector2f(-4500.f, 3000.f);
 const Vector2f backMid = Vector2f(-4500.f, 0.f);
 const Vector2f backRight = Vector2f(-4500.f, -3000.f);
+const Vector2f globalPatrolLeft = Vector2f(-3400.f,500.f);
+const Vector2f globalPatrolRight = Vector2f(-3400.f,-500.f);
 //basic parameters of ball and robots:
 Vector2f rBall;	//i.e. relative ball
 Vector2f gBall;	 //i.e. global ball
 Vector2f selfLocation;
 //basic parameters of defending strategies:
-const Vector2f patrolHind = Transformation::fieldToRobot(theRobotPose,Vector2f(-3400.f,500.f));
-const Vector2f patrolFront = Transformation::fieldToRobot(theRobotPose,Vector2f(-3400.f,-500.f));
+Vector2f patrolLeft;
+Vector2f patrolRight;
+Vector2f patrolPoint;
 //basic areas of the field: (--> judge which strategy to take)
 struct Area{
 	
+
 	Vector2f leftFrontPoint;
 	Vector2f rightFrontPoint;
 	Vector2f leftBackPoint;
@@ -33,6 +37,7 @@ Area globalBallSafeArea = {frontLeft, frontRight, midLeft, midRight};
 Area rightHalfCourt = {midMid, midRight, backMid, backRight};
 Area leftHalfCourt = {midLeft, midMid, backLeft, backMid};
 Area penaltyBox = {Vector2f(-3900.f, 1100.f), Vector2f(-3900.f, -1100.f), Vector2f(-4500.f, 1100.f), Vector2f(-4500.f, -1100.f)};
+Area keeperArea = {Vector2f(-3400.f, 1500.f), Vector2f(-3400.f, -1500.f), Vector2f(-4500.f, 1500.f), Vector2f(-4500.f, -1500.f)};
 //advanced parameters of players on the field:
 std::vector<Obstacle> obstacle;
 //std::vector<Teammate> teammate = theTeamData.teammates;
@@ -191,7 +196,7 @@ bool ifBallCloseEnough(void){ //distance
 		return false;
 	//judge if the ball is close enough to make further decision.
 }
-bool ifAnyOppInArea(Area a){
+bool ifAnyOppInArea(Area a){　//area
 	
 	bool jud = false;
 	size_t pin = 0;
@@ -306,12 +311,15 @@ bool getPassAngle(float& passAngle)
   return !candidateOne.empty();
 }
 
+
 option(CB)
 {
 	obstacle = theObstacleModel.obstacles; 
 	rBall = theBallModel.estimate.position;	//i.e. relative ball
 	gBall = Transformation::robotToField(theRobotPose, rBall);	 //i.e. global ball
 	selfLocation = theRobotPose.translation;
+	patrolLeft = Transformation::fieldToRobot(theRobotPose, globalPatrolLeft);
+	patrolRight = Transformation::fieldToRobot(theRobotPose,globalPatrolRight);
 	initial_state(start)
  	{
 	  
@@ -328,6 +336,23 @@ option(CB)
 		}
 		
 	}
+	
+	state(restart)
+	{
+		
+		transition
+		{
+			if(state_time > 4000.f)
+				goto searchForBall;
+		}
+		
+		action
+		{
+			HeadControlMode(HeadControl::lookForward);
+			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(0_deg, 1000.f,0));
+		}
+		
+	}
 
 	state(searchForBall)
 	{
@@ -336,10 +361,13 @@ option(CB)
 		{
 			if(theLibCodeRelease.timeSinceBallWasSeen<300)
 				goto patrolToHind;	
+			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
+				goto defendOpponent;
 		}
 		
 		action
 		{
+			Stand();
 			LookRound();
 			if(state_time > 3000)
 			{
@@ -358,29 +386,38 @@ option(CB)
 			if(ifBallLoseSight())
 				goto searchForBall;
 			
-			if(judgePosition(gBall,	defendBallArea))
+			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
 				goto defendBall;
 			
 			if(judgePosition(gBall, globalBallSafeArea) && ifAnyOppInArea(defendOpponentArea))
+				goto defendOpponent;
+				
+			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
 				goto defendOpponent;
 		}
 		
 		action
 		{
+			OUTPUT_TEXT(!ifAnyOppInArea(defendOpponentArea));
+			if(gBall.y() > 0)
+				patrolPoint = patrolLeft;
+			else
+				patrolPoint = patrolRight;
 			
-			
-			if(patrolHind.norm() >= 200.f)
+			if(patrolPoint.norm() >= 200.f)
 			{
+				//OUTPUT_TEXT(patrolPoint.norm());
 				//HeadControlMode(HeadControl::lookForward);
 				Pose2f target;
-				target.rotation = std::abs(patrolHind.angle());
-				target.translation = Vector2f(-3800.f,-600.f);
-				Vector2f rtarget = Transformation::fieldToRobot(theRobotPose,target.translation);
+				target.rotation = std::abs(patrolPoint.angle());
+				target.translation = Transformation::robotToField(theRobotPose, patrolPoint);
+				Vector2f rtarget = patrolPoint;
 				WalkToTarget(Pose2f(0.8f,0.8f,0.8f),Pose2f(0.f,rtarget));
 				//theMotionRequest = thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
 			}
 			else //看向球之后站立
 			{
+				//OUTPUT_TEXT("yes");
 				LookAtBall();
 				if(std::abs(rBall.angle()) >= 5_deg)
 				{
@@ -392,7 +429,7 @@ option(CB)
 				}
 				
 			}
-			 
+		
 		}
 		
 	}
@@ -415,6 +452,7 @@ option(CB)
 				
 			if(std::abs(rBall.norm()) < 600.f)
 				goto prepareToPass;
+				
 			if(judgePosition(gBall,walkToBallArea) && (gBall.x() < selfLocation.x()))
 				goto walkToBall;
 		}
@@ -437,7 +475,6 @@ option(CB)
 				else
 					Stand();
 			}
-		
 			
 		}
 	}
@@ -447,10 +484,10 @@ option(CB)
 		
 		transition
 		{
-			if(ifBallLoseSight())
+			if(theLibCodeRelease.timeSinceBallWasSeen >12000)
 				goto searchForBall;
 			
-			if(judgePosition(gBall,	defendBallArea))
+			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
 				goto defendBall;
 
 			if(judgePosition(gBall, globalBallSafeArea) && !ifAnyOppInArea(defendOpponentArea))
@@ -460,7 +497,7 @@ option(CB)
 		action
 		{
 			Vector2f dop = getNearestOppInArea(defendOpponentArea);
-			dop = Vector2f(dop.x()-100.f, dop.y());
+			dop = Vector2f(dop.x()-80.f, dop.y());
 			Pose2f target;				
 			target.rotation = toRobot(dop).angle();
 			target.translation = dop;
@@ -495,25 +532,32 @@ option(CB)
 			if(!ifAnyOppSeen())
 				goto prepareToPass;
 			*/
+			if(judgePosition(gBall, keeperArea) && !ifAnyOppInArea(defendOpponentArea))
+				goto patrolToHind;
+				
+			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
+				goto defendOpponent;
 				
 			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) > 600.f)
 				goto prepareToPass;
 				
-			if(std::abs(toRobot(getNearestOpp()).norm()) <= 600.f && std::abs(rBall.norm()) < 600.f)
+			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) <= 600.f)
 				goto prepareToRescue;
 		}
 		
 		action
-		{
+		{	
+	
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
 		
-			Pose2f target;
+		　	Pose2f target;
 			target.rotation=rBall.angle();
 			target.translation=gBall;
 			theMotionRequest=thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
 			
 			HeadControlMode(HeadControl::lookForward);
+			
 		}
 		
 	}
@@ -582,9 +626,8 @@ option(CB)
 			if(std::abs(rBall.norm()) > 600.f)
 				goto walkToBall;
 				
-			if(theLibCodeRelease.between(rBall.y(), -30.f, 20.f)
-				&& theLibCodeRelease.between(rBall.x(), 140.f, 175.f))
-				goto rescueKick;
+			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f)
+				goto alignToRescue;
 		}
 		
 		action
@@ -617,7 +660,7 @@ option(CB)
 			if(std::abs(rBall.norm()) > 600.f)
 				goto walkToBall;
 				
-			if(theLibCodeRelease.between(rBall.y(), -30.f, 20.f)
+			if(theLibCodeRelease.between(rBall.y(), 35.f, 55.f)
 				&& theLibCodeRelease.between(rBall.x(), 140.f, 175.f))
 				goto rescueKick;
 		}
@@ -627,7 +670,7 @@ option(CB)
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
 			theHeadControlMode = HeadControl::lookForward;
-			WalkToTarget(Pose2f(40.f, 40.f, 40.f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y()));
+			WalkToTarget(Pose2f(40.f, 40.f, 40.f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y()-42.f));
 		}
 		
 	}
@@ -665,6 +708,32 @@ option(CB)
 		}
 		
 	}
+
+	state(alignToRescue)
+	{
+
+		transition
+		{
+			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+				goto patrolToHind;
+				
+			if(theLibCodeRelease.between(rBall.y(), 35.f, 55.f)
+				&& theLibCodeRelease.between(rBall.x(), 140.f, 175.f))
+				goto rescueKick;
+			
+			if(std::abs(rBall.norm()) > 600.f)
+				goto prepareToRescue;
+		}
+
+		action
+		{
+			HeadControlMode(HeadControl::lookForward);
+			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
+			theHeadControlMode = HeadControl::lookForward;
+			WalkToTarget(Pose2f(20.f, 20.f, 20.f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y() - 42.f));
+		}
+
+	}
 	
 	state(rescueKick)
 	{
@@ -672,7 +741,7 @@ option(CB)
 		transition
 		{
 			if(state_time > 3000 || (state_time > 10 && action_done))
-				goto patrolToHind;
+				goto restart;
 		}
 		
 		action
@@ -690,8 +759,9 @@ option(CB)
 		
 		transition
 		{
-			if(state_time > 3000 || (state_time > 10 && action_done))
-				goto patrolToHind;
+			if(state_time > 4000 || (state_time > 10 && action_done))
+				goto restart;
+			//OUTPUT_TEXT(action_done);
 		}
 		
 		action
@@ -703,3 +773,4 @@ option(CB)
   }
 
 }
+
