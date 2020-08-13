@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/11 4:13` @author:dyl
+//parameter　↓↓↓`8/13 3:35`
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -9,15 +9,16 @@ const Vector2f midLeft = Vector2f(0.f, 3000.f);
 const Vector2f backLeft = Vector2f(-4500.f, 3000.f);
 const Vector2f backMid = Vector2f(-4500.f, 0.f);
 const Vector2f backRight = Vector2f(-4500.f, -3000.f);
-const Vector2f globalPatrolHind = Vector2f(-3400.f,500.f);
-const Vector2f globalPatrolFront = Vector2f(-3400.f,-500.f);
+const Vector2f globalPatrolLeft = Vector2f(-3400.f,500.f);
+const Vector2f globalPatrolRight = Vector2f(-3400.f,-500.f);
 //basic parameters of ball and robots:
 Vector2f rBall;	//i.e. relative ball
 Vector2f gBall;	 //i.e. global ball
 Vector2f selfLocation;
 //basic parameters of defending strategies:
-Vector2f patrolHind;
-Vector2f patrolFront;
+Vector2f patrolLeft;
+Vector2f patrolRight;
+Vector2f patrolPoint;
 //basic areas of the field: (--> judge which strategy to take)
 struct Area{
 	
@@ -224,8 +225,8 @@ option(defender1)
 	rBall = theBallModel.estimate.position;	//i.e. relative ball
 	gBall = Transformation::robotToField(theRobotPose, rBall);	 //i.e. global ball
 	selfLocation = theRobotPose.translation;
-	patrolHind = Transformation::fieldToRobot(theRobotPose, globalPatrolHind);
-	patrolFront = Transformation::fieldToRobot(theRobotPose,globalPatrolFront);
+	patrolLeft = Transformation::fieldToRobot(theRobotPose, globalPatrolLeft);
+	patrolRight = Transformation::fieldToRobot(theRobotPose,globalPatrolRight);
 	initial_state(start)
  	{
 	  
@@ -298,16 +299,19 @@ option(defender1)
 		
 		action
 		{
+			if(gBall.y() > 0)
+				patrolPoint = patrolLeft;
+			else
+				patrolPoint = patrolRight;
 			
-			
-			if(patrolHind.norm() >= 200.f)
+			if(patrolPoint.norm() >= 200.f)
 			{
-				OUTPUT_TEXT(patrolHind.norm());
+				OUTPUT_TEXT(patrolPoint.norm());
 				//HeadControlMode(HeadControl::lookForward);
 				Pose2f target;
-				target.rotation = std::abs(patrolHind.angle());
-				target.translation = globalPatrolHind;
-				Vector2f rtarget = Transformation::fieldToRobot(theRobotPose,target.translation);
+				target.rotation = std::abs(patrolPoint.angle());
+				target.translation = Transformation::robotToField(theRobotPose, patrolPoint);
+				Vector2f rtarget = patrolPoint;
 				WalkToTarget(Pose2f(0.8f,0.8f,0.8f),Pose2f(0.f,rtarget));
 				//theMotionRequest = thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
 			}
@@ -325,7 +329,7 @@ option(defender1)
 				}
 				
 			}
-			 
+		
 		}
 		
 	}
@@ -371,7 +375,6 @@ option(defender1)
 				else
 					Stand();
 			}
-		
 			
 		}
 	}
@@ -663,3 +666,4 @@ option(defender1)
   }
 
 }
+
