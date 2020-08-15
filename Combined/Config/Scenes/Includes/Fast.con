@@ -1,0 +1,69 @@
+# Configuration for simulation scenes with oracled world models
+
+# activate simulation time
+st on
+
+# only a single robot displays game state
+dr debugDrawing3d:representation:GameInfo
+dr debugDrawing3d:representation:TeamInfo
+
+# in case we have more than a single robot
+robot all
+
+# Select modules for simulator
+mr GroundTruthWorldState CognitionLogDataProvider
+mr BallModel OracledWorldModelProvider
+mr BallModel3D OracledWorldModelProvider
+mr RobotPose OracledWorldModelProvider
+mr ObstacleModel OracledWorldModelProvider
+mr GroundTruthRobotPose OracledWorldModelProvider
+mr GroundTruthBallModel OracledWorldModelProvider
+mr FrameInfo CognitionLogDataProvider
+mr JointSensorData MotionLogDataProvider
+mr InertialSensorData MotionLogDataProvider
+mr KeyStates MotionLogDataProvider
+mr FrameInfo MotionLogDataProvider
+
+# Fast, because we do not compute images
+ci off
+mr Image default
+
+# Deactivate unused modules
+mr RobotHealth default
+
+# Deactivate modules depending on images
+mr FieldBoundary default
+mr AutoExposureWeightTable off
+mr ObstaclesImagePercept default
+mr ObstaclesFieldPercept default
+mr FieldLines default
+mr GoalFrame default
+mr CirclePercept default
+mr FieldLineIntersections default
+mr PenaltyMarkPercept default
+mr PenaltyMarkSpots off
+mr OuterCorner default
+mr PenaltyArea default
+mr MidCorner default
+mr IntersectionsPercept off
+mr LinesPercept off
+mr FilteredBallPercepts off
+mr BallPercept off
+mr CNSImage off
+mr CNSRegions off
+mr BallRegions off
+mr ConfirmedBallSpot off
+mr CNSPenaltyMarkRegions off
+mr PenaltyMarkRegions off
+mr BallSpots off
+mr ColorScanlineRegionsHorizontal off
+mr ColorScanlineRegionsVerticalClipped off
+mr ColorScanlineRegionsVertical off
+mr ScanGrid off
+mr BodyContour off
+mr Thumbnail off
+
+mr ECImage off
+
+call Includes/DebugResponses
+call Includes/GameStates

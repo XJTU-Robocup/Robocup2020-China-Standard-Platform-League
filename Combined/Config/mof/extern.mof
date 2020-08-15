@@ -1,0 +1,20 @@
+motion_id = extern
+
+"This motion is entry point for SpecialAction from other motion modules
+
+label start
+
+"All mofs must be enumerated here
+
+transition playDead playDead start
+
+transition getUpEngineDummy getUpEngineDummy start
+
+transition stand stand start
+transition standHigh standHigh start
+transition standHighLookUp standHighLookUp start
+
+transition sitDown sitDown start
+transition kickfoot kickfoot start
+"This line must be the last one
+transition extern extern start
