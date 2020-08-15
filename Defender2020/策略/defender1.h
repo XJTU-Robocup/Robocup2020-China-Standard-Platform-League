@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/14 7:39`
+//parameter　↓↓↓`8/15 10:10`
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -215,7 +215,6 @@ bool ifBallCloseEnough(void){ //distance
 bool ifAnyOppInArea(Area a){　//area
 	
 	bool jud = false;
-	size_t pin = 0;
 	size_t i = 0; 
 	Vector2f globalObs;
 	for( i=0; i < obstacle.size(); i++)
@@ -375,8 +374,10 @@ option(defender1)
 		transition
 		{
 			if(theLibCodeRelease.timeSinceBallWasSeen<300)
-				goto patrolToHind;	
-			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
+				goto patrolToHind;
+	
+			if(theLibCodeRelease.timeSinceBallWasSeen<300 
+				&& judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
 				goto defendOpponent;
 		}
 		
@@ -419,6 +420,8 @@ option(defender1)
 			else
 				patrolPoint = patrolRight;
 			
+			HeadControlMode(HeadControl::lookForward);
+			WalkToTarget(Pose2f(50.f, 50.f, 50.f), Pose2f(rBall.angle(), 0.f, 0.f));
 			if(patrolPoint.norm() >= 200.f)
 			{
 				//OUTPUT_TEXT(patrolPoint.norm());
@@ -499,7 +502,7 @@ option(defender1)
 		
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen >12000)
+			if(theLibCodeRelease.timeSinceBallWasSeen >15000)
 				goto searchForBall;
 			
 			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
@@ -511,6 +514,7 @@ option(defender1)
 		
 		action
 		{
+			HeadControlMode(HeadControl::lookForward);
 			Vector2f dop = getNearestOppInArea(defendOpponentArea);
 			dop = Vector2f(dop.x()-80.f, dop.y());
 			Pose2f target;				
@@ -624,7 +628,7 @@ option(defender1)
 	{
 		
 		transition
-		{rrr
+		{
 			if(ifBallLoseSight())
 				goto searchForBall;
 				
@@ -771,9 +775,9 @@ option(defender1)
 		action
 		{
 			HeadControlMode(HeadControl::lookForward);
-			SpecialAction(SpecialActionRequest::kickfoot);
-			//InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left),
-			//			Pose2f(0, rBall.x() - 160.f, rBall.y() - 55.f));
+			//SpecialAction(SpecialActionRequest::kickfoot);
+			InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left),
+						Pose2f(0, rBall.x() - 160.f, rBall.y() - 55.f));
 		}
 		
 	}
