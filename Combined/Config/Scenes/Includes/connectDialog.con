@@ -1,2 +1,0 @@
-# This script connects to a remote robot.
-sc Remote ${IP address:,192.168.35.2,10.0.35.2}
