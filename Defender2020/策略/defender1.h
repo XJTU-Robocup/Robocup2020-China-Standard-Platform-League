@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/15 10:46`
+//parameter　↓↓↓`8/15 11:45`
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -234,7 +234,7 @@ bool ifAnyOppInArea(Area a){　//area
 }
 //返回是否有传球角度。若存在传球角度，将最优角度传给参数passAngle
 bool getPassAngle(float& passAngle)
-{ 
+{
 	/*
 	static int countPrint=0;//累计输出次数
 	std::ofstream out;
