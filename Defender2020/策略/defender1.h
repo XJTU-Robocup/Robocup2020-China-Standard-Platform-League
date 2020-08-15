@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/15 10:10`
+//parameter　↓↓↓`8/15 10:46`
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -777,7 +777,7 @@ option(defender1)
 			HeadControlMode(HeadControl::lookForward);
 			//SpecialAction(SpecialActionRequest::kickfoot);
 			InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left),
-						Pose2f(0, rBall.x() - 160.f, rBall.y() - 55.f));
+						Pose2f(0, rBall.x() - 100.f, rBall.y() - 80.f));
 		}
 		
 	}
@@ -801,4 +801,3 @@ option(defender1)
   }
 
 }
-
