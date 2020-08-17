@@ -74,6 +74,9 @@ option(CF)
 			if(relativeBall().norm() < 500.f){
 				goto alignToGoal;
 			}
+			if(!ifBallInArea(5)){
+				goto position;
+			}
 		}
 		action
 		{ 
@@ -89,6 +92,13 @@ option(CF)
 			goto searchByHead;
 		  if(std::abs(target2Angle(kickTarget)) < 10_deg && std::abs(relativeBall().y()) < 100.f)
 			goto alignBehindBall;
+		
+		  if(!ifBallInArea(5)){
+				goto position;
+		  }
+		  if(relativeBall().norm() > 500.f){
+			    goto turnToBall;
+		  }
 		}
 		action
 		{
@@ -105,6 +115,12 @@ option(CF)
            && theLibCodeRelease.between(relativeBall().x(), 150.f, 180.f)
          && std::abs(target2Angle(kickTarget)) <= 2_deg)
 			goto kick;
+	    if(!ifBallInArea(5)){
+			goto position;
+	    }
+		  if(relativeBall().norm() > 500.f){
+			    goto turnToBall;
+		  }
 	  }
 	  action{
 		  LookAtBall();

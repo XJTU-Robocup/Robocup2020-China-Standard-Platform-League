@@ -1,12 +1,12 @@
 <Simulation>
 
   <Compound name="robots">
-    <Body ref="Nao" name="robot4">
+    <Body ref="Nao" name="robot10">
       <Translation x="-4" y="0" z="320mm"/>
       <Set name="NaoColor" value="red"/>
       
     </Body>
-    <Body ref="Nao" name="robot5">
+    <Body ref="Nao" name="robot11">
       <Translation x="-3" y="1" z="320mm"/>
       <Set name="NaoColor" value="red"/>
       

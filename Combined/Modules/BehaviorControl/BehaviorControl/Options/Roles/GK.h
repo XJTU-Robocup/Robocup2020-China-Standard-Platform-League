@@ -20,6 +20,7 @@ option(GK)
 	float dangerline=-2500;
 	float safeline=0;
 	float kickline=theFieldDimensions.xPosOwnPenaltyArea+500;
+	float guardliney=1800;
 	
 	initial_state(start)
   {
@@ -59,6 +60,8 @@ option(GK)
 			else
 				goto readystate;
 		}
+		if(state_time>5000)
+			goto ownGoal1;
 	  }
 	  action
 	  {
@@ -93,7 +96,7 @@ option(GK)
 	  {
 		  if(globalballv.x()<=v2)//优先拦截快速球
 			goto sitdown;
-		  if(ball_absolute.x()<kickline || ball_absolute.x()<robotx)//禁区里，踢它！！
+		  if((ball_absolute.x()<kickline&&std::abs(ball_absolute.y())<guardliney) || ball_absolute.x()<robotx)//禁区里，踢它！！
 			goto kickball;
 		  if((globalballv.x()>v2 && globalballv.x()<v3) || ball_absolute.x()<=dangerline)//
 			goto warningstate;
@@ -121,8 +124,10 @@ option(GK)
 			goto sitdown;
 		if(ball_absolute.x()>dangerline)
 			goto readystate;
+		if(ball_absolute.x()<kickline || ball_absolute.x()<robotx)//禁区里，踢它！！
+			goto kickball;
 		if(theLibCodeRelease.timeSinceBallWasSeen > 2000 || ball_absolute.x()<robotx)///丢球了！！！小心乌龙！！！
-			goto walkToSearch;
+			goto ownGoal1;
 		if(ball_absolute.x()>safeline)
 			goto safenow;
 		
@@ -159,13 +164,13 @@ option(GK)
 	  {
 		if(theLibCodeRelease.timeSinceBallWasSeen<300)
 		{
-			if(ball_absolute.x()<=robotx)
+			if(ball_absolute.x()<=robotx||ball_absolute.x()<kickline)
 				goto kickball;
 			else
 				goto readystate;
 		}
 		if(state_time>14500)
-			goto readystate;
+			goto walkToSearch;
 			
 	  }
 	  action
@@ -184,7 +189,7 @@ option(GK)
 	  action
 	  {
 		  //OUTPUT_TEXT(globalballv.x());
-		  OUTPUT_TEXT(ballv.x());
+		  //OUTPUT_TEXT(ballv.x());
 		  LookAtBall();
 		  Stand();
 		  //SpecialAction(SpecialActionRequest::sitDown);
@@ -198,6 +203,10 @@ option(GK)
 	  {
 		if(ball_absolute.x()>safeline)
 			goto safenow;
+		if(ball_absolute.x()>kickline)
+			goto warningstate;
+		if(std::abs(ball_absolute.y())> guardliney)
+			goto keepGuard;
 		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
 			goto walkToSearch;
 		if(std::abs(theBallModel.estimate.position.angle()) < 5_deg)
@@ -209,11 +218,100 @@ option(GK)
 		WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theBallModel.estimate.position.angle(), 0.f, 0.f));
 	  }
   }
+  ////////////////////////////////////////////////////////////////////////////
+  state(keepGuard)
+  {
+	  transition
+	  {
+		if(ball_absolute.x()>safeline)
+			goto safenow;
+		if(ball_absolute.x()>kickline)
+			goto warningstate;
+		if(std::abs(ball_absolute.y())< guardliney)
+			goto kickball;
+		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
+			goto walkToSearch;
+		if(ball_absolute.y()<0)
+		{
+			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-robotx) < 100.f && std::abs(-900.f-roboty) < 100.f)
+				goto keepGuard2;
+		}
+		if(ball_absolute.y()>0)
+		{
+			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-robotx) < 100.f && std::abs(900.f-roboty) < 100.f)
+				goto keepGuard2;
+		}
+	  }
+	  action
+	  {
+		LookAtBall();
+		if(ball_absolute.y()<0)
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-30_deg, theFieldDimensions.xPosOwnPenaltyArea-robotx, -900.f-roboty));
+		if(ball_absolute.y()>0)
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal+30_deg, theFieldDimensions.xPosOwnPenaltyArea-robotx, 900.f-roboty));
+	  }
+  }
+  
+  state(keepGuard2)
+  {
+	  transition
+	  {
+		if(ball_absolute.x()>safeline)
+			goto safenow;
+		if(ball_absolute.x()>kickline)
+			goto warningstate;
+		if(std::abs(ball_absolute.y())< guardliney)
+			goto kickball;
+		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
+			goto walkToSearch;
+		if(ball_absolute.y()<0)
+		{
+			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx) < 50.f && std::abs(ball.angle())<10_deg)
+				goto keepGuard3;
+		}
+		if(ball_absolute.y()>0)
+		{
+			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx) < 50.f && std::abs(ball.angle())<10_deg)
+				goto keepGuard3;
+		}
+	  }
+	  action
+	  {
+		LookAtBall();
+		if(ball_absolute.y()<0)
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(), theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx, -900.f-roboty));
+		if(ball_absolute.y()>0)
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(), theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx, 900.f-roboty));
+	  }
+  }
+  state(keepGuard3)
+  {
+	  transition
+	  {
+		if(ball_absolute.x()>safeline)
+			goto safenow;
+		if(ball_absolute.x()>kickline)
+			goto warningstate;
+		if(std::abs(ball_absolute.y())< guardliney)
+			goto kickball;
+		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
+			goto walkToSearch;
+	  }
+	  action
+	  {
+		LookAtBall();
+		Stand();
+	  }
+  }
   
   state(walkToBall)
   {
     transition
     {
+	  if(ball_absolute.x()>kickline)
+		goto warningstate;
+	  if(std::abs(ball_absolute.y())> guardliney)
+		goto keepGuard;
 	  if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
         goto walkToSearch;
       if(myball.norm() < 500.f)
@@ -232,8 +330,10 @@ option(GK)
   {
 	  transition
 	  {
-		if(ball_absolute.x()>safeline)
-			goto safenow;
+		if(ball_absolute.x()>kickline)
+			goto warningstate;
+		if(std::abs(ball_absolute.y())> guardliney)
+			goto keepGuard;
 		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
 			goto walkToSearch;
 		if(ball_absolute.y()>=0)
@@ -264,6 +364,10 @@ option(GK)
     {
 		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
 			goto walkToSearch;
+		if(ball_absolute.x()>kickline)
+			goto warningstate;
+		if(std::abs(ball_absolute.y())> guardliney)
+			goto keepGuard;
 		if(ball_absolute.y()>=0)
 		{
 			if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 35.f, 55.f)

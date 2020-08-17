@@ -1,10 +1,13 @@
-option(M)
+/** A test striker option without common decision */
+//std::vector<Obstacle> o = theObstacleModel.obstacles;  
+//std::vector<Teammate> t = theTeamData.teammates;
+option(Striker)
 {
   initial_state(start)
   {
     transition
     {
-       if(state_time > 1000)
+       if(state_time > 3000)
            goto stateDecision;
     }
     action
@@ -13,24 +16,39 @@ option(M)
     }
   }
   
+  state(restart)
+  {
+    transition
+    {
+       
+       if(state_time > 5000)
+           goto stateDecision;
+    }
+    action
+    {
+        LookRound();
+        Stand();
+    }
+  }
+  
   state(stateDecision)
   {
     transition
     {
-      if(globalRobot2().x()>1800.f || globalRobot2().x()<-1800.f
-      || globalRobot2().y()>100.f || globalRobot2().y()<-3000.f)
+      if(globalRobot().x()>1800.f || globalRobot().x()<-1800.f
+      || globalRobot().y()>100.f || globalRobot().y()<-3000.f)
           goto walkToTarget;
-      if(globalBall2().x()>1800.f || globalBall2().x()<-1800.f
-      || globalBall2().y()>100.f || globalBall2().y()<-3000.f)
+      if(globalBall().x()>1800.f || globalBall().x()<-1800.f
+      || globalBall().y()>100.f || globalBall().y()<-3000.f)
           goto walkToTarget;
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
           goto searchByHead;
-      if(globalBall2().x()<=1800.f && globalBall2().x()>=-1800.f
-      && globalBall2().y()<=100.f && globalBall2().y()>=-3000.f
+      if(globalBall().x()<=1800.f && globalBall().x()>=-1800.f
+      && globalBall().y()<=100.f && globalBall().y()>=-3000.f
       && theBallModel.estimate.position.norm()>450.f)
           goto walkToBall;
-      if(globalBall2().x()<=1800.f && globalBall2().x()>=-1800.f
-      && globalBall2().y()<=100.f && globalBall2().y()>=-3000.f
+      if(globalBall().x()<=1800.f && globalBall().x()>=-1800.f
+      && globalBall().y()<=100.f && globalBall().y()>=-3000.f
       && theBallModel.estimate.position.norm()<=450.f)
           goto alignToGoal;
     }
@@ -45,9 +63,9 @@ option(M)
   {
     transition
     {
-      if(modeDecision2()!=2)
+      if(modeDecision()!=2)
         goto stateDecision;
-      if(theBallModel.estimate.position.norm() < 500.f)
+      if(theRobotPose,theBallModel.estimate.position.norm() < 500.f)
         goto alignToGoal;
     }
     action
@@ -55,7 +73,7 @@ option(M)
       Pose2f target;
       target.rotation=theBallModel.estimate.position.angle();
       target.translation=Transformation::robotToField(theRobotPose,theBallModel.estimate.position);
-      theMotionRequest=thePathPlanner.plan(target,Pose2f(0.5f,0.5f,0.5f),false);
+      theMotionRequest=thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
     }
   }
   
@@ -63,6 +81,8 @@ option(M)
   {
     transition
     {
+      if(theLibCodeRelease.timeSinceBallWasSeen < 300)
+          goto walkToBall;
       Vector2f shootTarget = Transformation::fieldToRobot(theRobotPose, Vector2f(0.f, -1500.f));
       if(theLibCodeRelease.between(shootTarget.x(), -40.f, 40.f)
       && theLibCodeRelease.between(shootTarget.y(), -40.f, 40.f))
@@ -70,10 +90,11 @@ option(M)
     }
     action
     {
+      LookRound();
       Pose2f target;
       target.rotation=theBallModel.estimate.position.angle();
       target.translation=Vector2f(0.f, -1500.f);
-      theMotionRequest=thePathPlanner.plan(target,Pose2f(0.5f,0.5f,0.5f),false);
+      theMotionRequest=thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
     }
   }
   
@@ -83,13 +104,13 @@ option(M)
       {
         if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
           goto searchByHead;
-        if(modeDecision2()!=3)
+        if(modeDecision()!=3)
           goto stateDecision;
       }
       action
       {
         HeadControlMode(HeadControl::lookForward);
-        WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theBallModel.estimate.position.angle(), 0.f, 0.f));
+        WalkToTarget(Pose2f(0.8f, 0.8f, 0.8f), Pose2f(theBallModel.estimate.position.angle(), 0.f, 0.f));
       }
   }
   
@@ -100,12 +121,17 @@ option(M)
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
         goto stateDecision;
       if(std::abs(theLibCodeRelease.angleToGoal) < 10_deg && std::abs(theBallModel.estimate.position.y()) < 100.f)
-        goto alignBehindBall;
+        goto alignBehindBall;        
+      if(theRobotPose,theBallModel.estimate.position.norm()>1000.f)
+        goto stateDecision;
+      if(globalBall().x()>1800.f || globalBall().x()<-1800.f
+      || globalBall().y()>100.f || globalBall().y()<-3000.f)
+        goto stateDecision;
     }
     action
     {
       HeadControlMode(HeadControl::lookForward);
-      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 400.f, theBallModel.estimate.position.y()));
+      WalkToTarget(Pose2f(0.8f, 0.8f, 0.8f), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 400.f, theBallModel.estimate.position.y()));
     }
   }
 
@@ -113,30 +139,30 @@ option(M)
   {
     transition
     {
-      if(modeDecision2()!=1)
+      if(modeDecision()!=1)
         goto stateDecision;
       Vector2f target = Vector2f(0.f, 0.f);
       if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 20.f, 50.f)
          && theLibCodeRelease.between(theBallModel.estimate.position.x(), 140.f, 170.f)
          && std::abs(theLibCodeRelease.angleToGoal) < 2_deg
-         && (getShootTarget2(target)))
+         && (getShootTarget(target)))
         goto walkToShootPoint;
       /*if(theLibCodeRelease.between(posBall().y(), 20.f, 50.f)
          && theLibCodeRelease.between(posBall().x(), 140.f, 170.f)
          && std::abs(theLibCodeRelease.angleToGoal) < 2_deg
-         && (getKickTarget2(target)==1))
-        goto kick;
+         && (passDecision()))
+        goto walkToPassPoint;
       if(theLibCodeRelease.between(posBall().y(), 20.f, 50.f)
          && theLibCodeRelease.between(posBall().x(), 140.f, 170.f)
          && std::abs(theLibCodeRelease.angleToGoal) < 2_deg
-         && (getKickTarget2(target)==0))
+         && (getKickTarget(target)==0))
         goto kick;*/
       goto walkToKickPoint;
     }
     action
     {
       theHeadControlMode = HeadControl::lookForward;
-      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 145.f, theBallModel.estimate.position.y()-40.f));
+      WalkToTarget(Pose2f(0.8f, 0.8f, 0.8f), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 155.f, theBallModel.estimate.position.y()-42.f));
     }
   }
   
@@ -144,36 +170,57 @@ option(M)
   {
     transition
     {
-      if(modeDecision2()!=1)
+      if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
         goto stateDecision;
-      if(theLibCodeRelease.between(theBallModel.estimate.position.y(), -200.f, 200.f)
-         && theLibCodeRelease.between(theBallModel.estimate.position.x(), -200.f, 200.f))
+      if(theLibCodeRelease.between(theBallModel.estimate.position.y(), -160.f, 160.f)
+         && theLibCodeRelease.between(theBallModel.estimate.position.x(), -160.f, 160.f))
         goto shoot;
     }
     action
     {
       Vector2f target = Vector2f(0.f, 0.f);
-      getShootTarget2(target);
+      getShootTarget(target);
       Vector2f kickTarget = Transformation::fieldToRobot(theRobotPose, target);
-      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(kickTarget.angle(), theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
+      WalkToTarget(Pose2f(0.8f, 0.8f, 0.8f), Pose2f(kickTarget.angle(), theBallModel.estimate.position.x() - 155.f, theBallModel.estimate.position.y() - 42.f));
     }
   }
   
-  state(walkToKickPoint)
+  /*state(walkToPassPoint)
   {
     transition
     {
-      if(modeDecision2()!=1)
+      if(modeDecision()!=1)
         goto stateDecision;
-      if(theLibCodeRelease.between(theBallModel.estimate.position.y(), -200.f, 200.f)
-         && theLibCodeRelease.between(theBallModel.estimate.position.x(), -200.f, 200.f))
-        goto kick;
+      if(theLibCodeRelease.between(theBallModel.estimate.position.y(), -160.f, 160.f)
+         && theLibCodeRelease.between(theBallModel.estimate.position.x(), -160.f, 160.f))
+        goto pass;
     }
     action
     {
       Vector2f target = Vector2f(4500.f, 0.f);
       Vector2f kickTarget = Transformation::fieldToRobot(theRobotPose, target);
-      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(kickTarget.angle(), theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
+      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(kickTarget.angle(), theBallModel.estimate.position.x() - 155.f, theBallModel.estimate.position.y() - 42.f));
+    }
+  }*/
+  
+  state(walkToKickPoint)
+  {
+    transition
+    {
+      if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
+        goto stateDecision;
+      if(theLibCodeRelease.between(theBallModel.estimate.position.y(), -160.f, 160.f)
+         && theLibCodeRelease.between(theBallModel.estimate.position.x(), -160.f, 160.f))
+        goto kick;
+    }
+    action
+    {
+      Vector2f target = Vector2f(4500.f, 0.f);
+      getKickAngle(target);
+      OUTPUT_TEXT(target.x());
+      OUTPUT_TEXT(target.y());
+      Vector2f kickTarget = Transformation::fieldToRobot(theRobotPose, target);
+      WalkToTarget(Pose2f(0.8f, 0.8f, 0.8f), Pose2f(kickTarget.angle(), theBallModel.estimate.position.x() - 155.f, theBallModel.estimate.position.y() - 42.f));
     }
   }
   
@@ -182,17 +229,17 @@ option(M)
     transition
     {
       if(state_time > 3000 || (state_time > 10 && action_done))
-        goto stateDecision;
+        goto restart;
     }
     action
     {    
       HeadControlMode(HeadControl::lookForward);
-      SpecialAction(SpecialActionRequest::kickfoot);
+      SpecialAction(SpecialActionRequest::dajiao);
       //InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left), Pose2f(shootTarget.angle(), theBallModel.estimate.position.x() - 145.f, theBallModel.estimate.position.y() - 40.f));
     }
   }
   
-  /*state(passTheBall)
+  /*state(pass)
   {
     transition
     {
@@ -202,7 +249,7 @@ option(M)
     action
     {
       Vector2f target = Vector2f(0.f, 0.f);
-      getKickTarget2(target);
+      getKickTarget(target);
       Vector2f shootTarget = Vector2f(target.x()-posBall().x(), target.y()-posBall().y());
       HeadControlMode(HeadControl::lookForward);
       InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left), Pose2f(target.angle(), posBall().x() - 160.f, posBall().y() - 55.f));
@@ -214,12 +261,12 @@ option(M)
     transition
     {
       if(state_time > 3000 || (state_time > 10 && action_done))
-        goto stateDecision;
+        goto restart;
     }
     action
     {
       HeadControlMode(HeadControl::lookForward);
-      SpecialAction(SpecialActionRequest::kickfoot);
+      SpecialAction(SpecialActionRequest::dajiao);
       //InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left), Pose2f(shootTarget.angle(), theBallModel.estimate.position.x() - 160.f, theBallModel.estimate.position.y()-55.f));
     }
   }
@@ -262,7 +309,7 @@ option(M)
   state(searchByPatrol){    
     transition
     {
-      if(modeDecision2()!=0)
+      if(modeDecision()!=0)
           goto stateDecision;
       if(theLibCodeRelease.timeSinceBallWasSeen < 300)
         goto stateDecision;
@@ -276,3 +323,6 @@ option(M)
     }
   }
 }
+
+
+
