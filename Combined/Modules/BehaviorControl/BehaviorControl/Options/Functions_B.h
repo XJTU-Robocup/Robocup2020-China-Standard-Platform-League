@@ -228,3 +228,24 @@ int modeDecision22()
 		return 3;
 	 */
 }
+bool getKickAngle(Vector2f& shootTarget){
+	const float step=2*(theFieldDimensions.yPosLeftGoal-100)/400;
+	const float shootLen=5000.f;
+	
+	Vector2f pointGoal(theFieldDimensions.xPosOpponentGroundline+ballRadius,0);
+	segment segFromBallToGoal(theBallModel.estimate.position,pointGoal);
+	std::vector<std::pair<float,Vector2f> > candidates;
+	std::pair<float,Vector2f> temp;
+	for(float i=theFieldDimensions.yPosRightGoal+100;i<=theFieldDimensions.yPosLeftGoal-100;i+=step){
+		pointGoal[1]=i;
+			segFromBallToGoal.end[1]=pointGoal;
+			temp.first=minDisBetweenSegmentAndObstacle(segFromBallToGoal);
+			temp.second=pointGoal;
+			candidates.push_back(temp);
+		}
+	
+	if(!candidates.empty())
+		shootTarget=maxElement(candidates);
+	
+	return !candidates.empty();
+}
