@@ -1,1 +1,0 @@
-vic all shift mr HeadMotionRequest ManualHeadMotionProvider \n set parameters:ManualHeadMotionProvider xImg = $1; yImg = $2; camera = $3;
