@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/18 20:16` @author: Daiyilong
+//parameter　↓↓↓`8/18 20:50` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -9,8 +9,9 @@ const Vector2f midLeft = Vector2f(0.f, 3000.f);
 const Vector2f backLeft = Vector2f(-4500.f, 3000.f);
 const Vector2f backMid = Vector2f(-4500.f, 0.f);
 const Vector2f backRight = Vector2f(-4500.f, -3000.f);
-const Vector2f globalPatrolLeft = Vector2f(-3400.f,500.f);
-const Vector2f globalPatrolRight = Vector2f(-3400.f,-500.f);
+const Vector2f globalPatrolLeft = Vector2f(-3400.f, 500.f);
+const Vector2f globalPatrolRight = Vector2f(-3400.f, -500.f);
+const Vector2f quickShotPoint = Vector2f(4500.f, 0.f);
 //basic parameters of ball and robots:
 Vector2f rBall;	//i.e. relative ball
 Vector2f gBall;	 //i.e. global ball
@@ -185,6 +186,11 @@ float getRescueAngle(Vector2f b, Vector2f s){//return a suitable rescue angle, s
 	}
 	return(Transformation::fieldToRobot(theRobotPose, rescuePoint).angle());
 		
+}
+float getQuickShotAngle(){
+	
+	return(Transformation::fieldToRobot(theRobotPose, quickShotPoint).angle());
+	
 }
 bool judgePosition(Vector2f a, Area b){ //area
 		
@@ -608,13 +614,21 @@ option(defender1)
 			}
 			else if(1)//没有角度直接解围
 			{
-				if(selfLocation.x() >= gBall.x())
-					goto alignToRescueKick;
-				else if(selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
-					goto alignSideKickRight;
-				else if(selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
-					goto alignSideKickLeft;
 			
+				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 400.f
+					&& selfLocation.x() >= gBall.x())
+					goto alignToRescueKick;
+					
+				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 400.f
+					&& selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
+					goto alignSideKickLeft;
+					
+				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 400.f
+					&& selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
+					goto alignSideKickRight;
+					
+				else
+					goto quickShot;
 			}
 				
 		}
@@ -694,12 +708,20 @@ option(defender1)
 			}
 			else if(1)//没有角度直接解围
 			{
-				if(selfLocation.x() >= gBall.x())
+				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 400.f
+					&& selfLocation.x() >= gBall.x())
 					goto alignToRescueKick;
-				else if(selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
-					goto alignSideKickRight;
-				else if(selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
+					
+				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 400.f
+					&& selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
 					goto alignSideKickLeft;
+					
+				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 400.f
+					&& selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
+					goto alignSideKickRight;
+					
+				else
+					goto quickShot;
 			}
 			
 			if(std::abs(rBall.norm()) > 600.f)
@@ -888,5 +910,47 @@ option(defender1)
 		}
 		
 	}
+
+	state(quickShot)
+	{
+		transition
+		{
+			
+			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+				goto patrolToHind;
+				
+			if(judgePosition(gBall, globalBallSafeArea) && !ifAnyOppInArea(defendOpponentArea))
+				goto patrolToHind;
+				
+			if(std::abs(getQuickShotAngle()) < 10_deg && std::abs(rBall.y()) < 100.f)
+				goto alignToShot;
+		}
+		action
+		{
+			HeadControlMode(HeadControl::lookForward);
+			LookAtBall();
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 400.f, rBall.y()));
+		}
+	}
 	
+	state(alignToShot)
+	{
+		transition
+		{
+			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+				goto patrolToHind;
+				
+			if(theLibCodeRelease.between(rBall.y(), 35.f, 55.f)
+					&& theLibCodeRelease.between(rBall.x(), 150.f, 175.f)
+					/*&& std::abs(passAngle) < 2_deg*/)
+				goto pass;
+		}
+		action
+		{
+			HeadControlMode(HeadControl::lookForward);
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 165.f, rBall.y() - 42.f));
+		}
+	}
+
 }
