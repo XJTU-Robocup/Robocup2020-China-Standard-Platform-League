@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/18 16:14` @author: Daiyilong
+//parameter　↓↓↓`8/18 20:16` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -614,6 +614,7 @@ option(defender1)
 					goto alignSideKickRight;
 				else if(selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
 					goto alignSideKickLeft;
+			
 			}
 				
 		}
@@ -691,9 +692,19 @@ option(defender1)
 					/*&& std::abs(passAngle) < 2_deg*/)
 					goto pass;
 			}
+			else if(1)//没有角度直接解围
+			{
+				if(selfLocation.x() >= gBall.x())
+					goto alignToRescueKick;
+				else if(selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
+					goto alignSideKickRight;
+				else if(selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
+					goto alignSideKickLeft;
+			}
 			
 			if(std::abs(rBall.norm()) > 600.f)
 				goto prepareToPass;
+			
 			
 		}
 		
@@ -704,7 +715,7 @@ option(defender1)
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 			//HeadControlMode(HeadControl::lookDown);
 			if(getPassAngle(passAngle))
-				WalkToTarget(Pose2f(0.2f, 0.2f, 0.2f), Pose2f(passAngle, rBall.x() - 165.f, rBall.y() - 42.f));
+				WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(passAngle, rBall.x() - 165.f, rBall.y() - 42.f));
 			//OUTPUT_TEXT(rBall.x());
 			//OUTPUT_TEXT(rBall.y());
 		
@@ -792,6 +803,8 @@ option(defender1)
 				&& theLibCodeRelease.between(rBall.x(), 160.f, 190.f))
 				goto sideKickLeft;
 				
+			if(std::abs(rBall.norm()) > 600.f)
+				goto prepareToRescue;
 		}
 	
 		action
@@ -837,6 +850,9 @@ option(defender1)
 			if(theLibCodeRelease.between(rBall.y(), 0.f, 30.f)
 				&& theLibCodeRelease.between(rBall.x(), 160.f, 190.f))
 				goto sideKickRight;
+				
+			if(std::abs(rBall.norm()) > 600.f)
+				goto prepareToRescue;
 		}
 		
 		action
