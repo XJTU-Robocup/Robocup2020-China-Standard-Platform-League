@@ -606,7 +606,7 @@ option(defender1)
 		
 		action
 		{	
-			OUTPUT_TEXT(getNearestOppR().norm());
+			//OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 		
@@ -913,7 +913,7 @@ option(defender1)
 		
 		action
 		{
-			OUTPUT_TEXT(getNearestOppR().norm());
+			//OUTPUT_TEXT(getNearestOppR().norm());
 			theHeadControlMode = HeadControl::lookForward;
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), rBall.x() - 180.f, rBall.y() - 30.f));
 			
@@ -937,7 +937,7 @@ option(defender1)
 		
 		action
 		{
-			OUTPUT_TEXT(getNearestOppR().norm());
+			//OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			InWalkKick(WalkKickVariant(WalkKicks::sidewardsInner, Legs::right),
 	　　　　　 	Pose2f(getRescueAngle(gBall, selfLocation), rBall.x()-10.f , rBall.y() + 80.f));
@@ -965,7 +965,7 @@ option(defender1)
 		}
 		action
 		{
-			OUTPUT_TEXT(getNearestOppR().norm());
+			//OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			LookAtBall();
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 400.f, rBall.y()));
@@ -986,8 +986,8 @@ option(defender1)
 		}
 		action
 		{
-			OUTPUT_TEXT(getNearestOppR().norm());
-			HeadControlMode(HeadControl::lookForward);
+
+			//HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 165.f, rBall.y() - 42.f));
 		}
