@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/19 16:10` @author: Daiyilong
+//parameter　↓↓↓`8/19 19:21` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -68,7 +68,6 @@ bool ifAnyOppSeen(void)
 	}
 	return flag;
 }
-
 //2020 07 25 DTW
 //如果看不到对方机器人返回敌人在无限远处
 Vector2f getNearestOpp(void){
@@ -119,6 +118,38 @@ Vector2f getNearestOppInArea(Area a){
 	}
 	return globalObs;
 	//get the global location of the nearest opponent robot away from myself
+}
+Vector2f getNearestOppR(void){
+	
+	size_t pin = 0;
+	size_t i = 0; 
+	//2020 07 25 DTW
+	//If there is no Opp then return A place which is INF far from  you
+	Vector2f globalObs(1000000,1000000);
+	for( i=0; i < obstacle.size(); i++)
+	{	
+		float  minDis = 10000;
+			
+		if(obstacle[i].isOpponent())
+		{	
+			if(std::abs(obstacle[i].center.norm()) <= minDis)
+			{
+				minDis = std::abs(obstacle[i].center.norm());
+				pin = i;
+				globalObs = obstacle[pin].center;
+			}
+							
+		}
+	}
+	return globalObs;
+	//get the global location of the nearest opponent robot away from myself
+}
+bool onMyLeftOrNot(void){
+	
+	if(getNearestOppR().y() <= 0)
+		return true;
+	else
+		return false; 
 }
 //↓↓↓还要改！！！
 /*
@@ -474,8 +505,11 @@ option(defender1)
 			if(std::abs(toRobot(getDefendPoint(gBall, selfLocation)).norm()) < 50.f && judgePosition(gBall, walkToBallArea))
 				goto walkToBall;	
 				
-			if(std::abs(rBall.norm()) < 600.f)
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) > 700.f)
 				goto prepareToPass;
+				
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) <= 700.f)
+				goto prepareToRescue;
 				
 			if(judgePosition(gBall,walkToBallArea) && (gBall.x() < selfLocation.x()))
 				goto walkToBall;
@@ -563,16 +597,16 @@ option(defender1)
 			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
 				goto defendOpponent;
 				
-			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) > 600.f)
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) > 700.f)
 				goto prepareToPass;
 				
-			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) <= 600.f)
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) <= 700.f)
 				goto prepareToRescue;
 		}
 		
 		action
 		{	
-	
+			OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 		
@@ -604,10 +638,10 @@ option(defender1)
 			if(std::abs(rBall.norm()) > 600.f)
 				goto walkToBall;
 				
-			if(std::abs(toRobot(getNearestOpp()).norm()) <= 400.f && std::abs(rBall.norm()) <= 600.f)
+			if(std::abs(getNearestOppR().norm()) <= 700.f && std::abs(rBall.norm()) <= 600.f)
 				goto prepareToRescue;
 			//
-			if(getPassAngle(passAngle))
+			if(getPassAngle(passAngle) && std::abs(getNearestOppR().norm()) > 700.f && std::abs(rBall.norm()) <= 600.f)
 			{
 				if(std::abs(passAngle) < 10_deg && std::abs(rBall.y()) < 100.f)
 					goto alignToPass;
@@ -615,16 +649,16 @@ option(defender1)
 			else if(1)//没有角度直接解围
 			{
 			
-				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
+				if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
 					&& selfLocation.x() >= gBall.x())
 					goto alignToRescueKick;
 					
-				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
-					&& selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
+				if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
+					&& selfLocation.x() < gBall.x() && onMyLeftOrNot())
 					goto alignSideKickLeft;
 					
-				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
-					&& selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
+				if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
+					&& selfLocation.x() < gBall.x() && !onMyLeftOrNot())
 					goto alignSideKickRight;
 					
 				else
@@ -660,22 +694,22 @@ option(defender1)
 			//2020 07 25 DTW
 			//防止循环
 			if(std::abs(rBall.norm()) <= 600.f && getPassAngle(passAngle) 
-					&& std::abs(toRobot(getNearestOpp()).norm()) > 600.f)
+					&& std::abs(toRobot(getNearestOpp()).norm()) > 700.f)
 				goto prepareToPass;
 				
 			if(std::abs(rBall.norm()) > 600.f)
 				goto walkToBall;
 				
-			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
 				&& selfLocation.x() >= gBall.x())
 				goto alignToRescueKick;
-				
-			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
-				&& selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
+			
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
+				&& selfLocation.x() < gBall.x() && onMyLeftOrNot())
 				goto alignSideKickLeft;
 				
-			if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
-				&& selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
+			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
+				&& selfLocation.x() < gBall.x() && !onMyLeftOrNot())
 				goto alignSideKickRight;	
 				
 				
@@ -708,16 +742,16 @@ option(defender1)
 			}
 			else if(1)//没有角度直接解围
 			{
-				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
+				if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
 					&& selfLocation.x() >= gBall.x())
 					goto alignToRescueKick;
 					
-				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
-					&& selfLocation.x() < gBall.x() && selfLocation.y() < gBall.y())
+				if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
+					&& selfLocation.x() < gBall.x() && onMyLeftOrNot())
 					goto alignSideKickLeft;
 					
-				if(std::abs(rBall.norm()) < 600.f && std::abs(toRobot(getNearestOpp()).norm()) < 600.f
-					&& selfLocation.x() < gBall.x() && selfLocation.y() >= gBall.y())
+				if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) < 700.f
+					&& selfLocation.x() < gBall.x() && !onMyLeftOrNot())
 					goto alignSideKickRight;
 					
 				else
@@ -874,11 +908,12 @@ option(defender1)
 				goto sideKickRight;
 				
 			if(std::abs(rBall.norm()) > 600.f)
-				goto prepareToRescue;
+							goto prepareToRescue;
 		}
 		
 		action
 		{
+			OUTPUT_TEXT(getNearestOppR().norm());
 			theHeadControlMode = HeadControl::lookForward;
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), rBall.x() - 180.f, rBall.y() - 30.f));
 			
@@ -902,10 +937,10 @@ option(defender1)
 		
 		action
 		{
-			
+			OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			InWalkKick(WalkKickVariant(WalkKicks::sidewardsInner, Legs::right),
-	　　　　　 		Pose2f(getRescueAngle(gBall, selfLocation), rBall.x()-10.f , rBall.y() + 80.f));
+	　　　　　 	Pose2f(getRescueAngle(gBall, selfLocation), rBall.x()-10.f , rBall.y() + 80.f));
 	
 		}
 		
@@ -924,9 +959,13 @@ option(defender1)
 				
 			if(std::abs(getQuickShotAngle()) < 10_deg && std::abs(rBall.y()) < 100.f)
 				goto alignToShot;
+			
+			if(std::abs(rBall.norm()) > 600.f)
+				goto prepareToRescue;
 		}
 		action
 		{
+			OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			LookAtBall();
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 400.f, rBall.y()));
@@ -947,6 +986,7 @@ option(defender1)
 		}
 		action
 		{
+			OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 165.f, rBall.y() - 42.f));
