@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/19 15:47` @author: Daiyilong
+//parameter　↓↓↓`8/19 16:10` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -176,12 +176,12 @@ float getRescueAngle(Vector2f b, Vector2f s){//return a suitable rescue angle, s
 	Vector2f rescuePoint;
 	if(b.y() > s.y())
 	{
-		rescuePoint.x() = b.x();
+		rescuePoint.x() = b.x() + 1000.f;
 		rescuePoint.y() = 3000.f;
 	}
 	else
 	{
-		rescuePoint.x() = b.x();
+		rescuePoint.x() = b.x() + 1000.f;
 		rescuePoint.y() = -3000.f;
 	}
 	return(Transformation::fieldToRobot(theRobotPose, rescuePoint).angle());
@@ -416,7 +416,7 @@ option(defender1)
 				
 			if(judgePosition(gBall, keeperArea) && ifAnyOppInArea(defendOpponentArea))
 				goto defendOpponent;
-		}
+		} 
 		
 		action
 		{
