@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/19 19:21` @author: Daiyilong
+//parameter　↓↓↓`8/19 23:48` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -179,7 +179,7 @@ Vector2f countDefendPoint(void){
 ↑↑↑还要改！！！ */
 
 //following functions contain particular parameters, change them if needed !!
-Vector2f getDefendPoint(Vector2f a, Vector2f b){ //location/coordinate, update needed, plz take it with a grain of salt
+Vector2f getDefendPoint(Vector2f a, Vector2f b){ //location/coordinate, update needed, plz take it with a grain of salt.
 	
 	Vector2f def;
 	float x0 = a.x();
@@ -218,9 +218,28 @@ float getRescueAngle(Vector2f b, Vector2f s){//return a suitable rescue angle, s
 	return(Transformation::fieldToRobot(theRobotPose, rescuePoint).angle());
 		
 }
-float getQuickShotAngle(){
+float getQuickShotAngle(void){
 	
 	return(Transformation::fieldToRobot(theRobotPose, quickShotPoint).angle());
+	
+}
+float checkSideKickAngle(Vector2f b, Vector2f s){//s.t. global ball coordinate.
+	
+	float xb = b.x();
+	float yb = b.y();
+	float xs = s.x();
+	float ys = s.y();
+	if(ys = yb)
+		return true;
+	else
+	{
+		float x = (xb - xs);
+		float y = std::abs(yb - ys);
+		if((x/y) > 1.732)
+			return true;
+		else
+			return false;
+	}
 	
 }
 bool judgePosition(Vector2f a, Area b){ //area
@@ -502,7 +521,7 @@ option(defender1)
 			if(judgePosition(gBall, globalBallSafeArea) && !ifAnyOppInArea(defendOpponentArea))
 				goto patrolToHind;
 			
-			if(std::abs(toRobot(getDefendPoint(gBall, selfLocation)).norm()) < 50.f && judgePosition(gBall, walkToBallArea))
+			if(std::abs(toRobot(getDefendPoint(gBall, selfLocation)).norm()) < 150.f && judgePosition(gBall, walkToBallArea))
 				goto walkToBall;	
 				
 			if(std::abs(rBall.norm()) < 600.f && std::abs(getNearestOppR().norm()) > 700.f)
@@ -606,7 +625,6 @@ option(defender1)
 		
 		action
 		{	
-			//OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 		
@@ -856,11 +874,18 @@ option(defender1)
 				goto searchForBall;
 				
 			if(theLibCodeRelease.between(rBall.y(), -30.f, 0.f)
-				&& theLibCodeRelease.between(rBall.x(), 160.f, 190.f))
+				&& theLibCodeRelease.between(rBall.x(), 160.f, 190.f)
+				&& checkSideKickAngle(gBall, selfLocation))
 				goto sideKickLeft;
+				
+			if(!onMyLeftOrNot())
+				goto alignSideKickRight;
 				
 			if(std::abs(rBall.norm()) > 600.f)
 				goto prepareToRescue;
+				
+			if(getNearestOpp().x() < (selfLocation.x()-50))
+				goto quickShot;
 		}
 	
 		action
@@ -887,7 +912,7 @@ option(defender1)
    
 		action
 		{
-		
+			//OUTPUT_TEXT(onMyLeftOrNot());
 			HeadControlMode(HeadControl::lookForward);
 			InWalkKick(WalkKickVariant(WalkKicks::sidewardsInner, Legs::left),
 						Pose2f(rBall.angle(), rBall.x()-100.f, rBall.y() - 80.f));
@@ -904,11 +929,18 @@ option(defender1)
 				goto searchForBall;
 				
 			if(theLibCodeRelease.between(rBall.y(), 0.f, 30.f)
-				&& theLibCodeRelease.between(rBall.x(), 160.f, 190.f))
+				&& theLibCodeRelease.between(rBall.x(), 160.f, 190.f)
+				&& checkSideKickAngle(gBall, selfLocation))
 				goto sideKickRight;
+			
+			if(onMyLeftOrNot())
+				goto alignSideKickLeft;
 				
 			if(std::abs(rBall.norm()) > 600.f)
-							goto prepareToRescue;
+				goto prepareToRescue;
+				
+			if(getNearestOpp().x() < (selfLocation.x()-50))
+				goto quickShot;
 		}
 		
 		action
