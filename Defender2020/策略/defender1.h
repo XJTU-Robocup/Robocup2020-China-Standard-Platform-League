@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/19 23:48` @author: Daiyilong
+//parameter　↓↓↓`8/20 11:41` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -235,7 +235,7 @@ float checkSideKickAngle(Vector2f b, Vector2f s){//s.t. global ball coordinate.
 	{
 		float x = (xb - xs);
 		float y = std::abs(yb - ys);
-		if((x/y) > 1.732)
+		if((x/y) > 1.8)
 			return true;
 		else
 			return false;
