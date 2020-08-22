@@ -1,23 +1,21 @@
-bool ifBallInArea(int idArea){
-	switch (idArea){
-		case 5:
-			if(theLibCodeRelease.between(fieldBall().x(),1800,4500))
-				return true;
-			else
-				return false;
-			break;
-		default:
-			return false;
-	}
+bool ifBallInArea_CF(){
+	if(theLibCodeRelease.between(fieldBall().x(),1800,4500))
+		return true;
+	else
+		return false;
+
 };
-Vector2f getPositionTarget(int idArea){
-	Vector2f positionTarget(1800,0);
-	switch(idArea){
-		case 5:
-			positionTarget[1]=0;
-			return positionTarget;
-			break;
+Vector2f getPositionTarget_CF(){
+	return Vector2f(1800,0);
+}
+bool ifSideKick_CF(){
+	Vector2f posObstacle;
+	for(const auto& obstacle : theObstacleModel.obstacles){
+		posObstacle=obstacle.center;
+		if(theLibCodeRelease.between(posObstacle.x(),0,500) && theLibCodeRelease.between(posObstacle.y(),-500,500))
+			return true;
 	}
+	return false;
 }
 
 option(CF)
@@ -36,7 +34,7 @@ option(CF)
 	{
 		transition{
 			if(theLibCodeRelease.timeSinceBallWasSeen < 3000){
-				if(ifBallInArea(5)){
+				if(ifBallInArea_CF()){
 					goto turnToBall;
 				}
 				else{
@@ -44,7 +42,7 @@ option(CF)
 				}
 			}
 			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
-				goto searchByHead;
+				goto search;
 		}
 		action{
 			LookForward();
@@ -55,7 +53,7 @@ option(CF)
 		transition
 		{
 		  if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
-			goto searchByHead;
+			goto search;
 		  if(std::abs(relativeBall().angle()) < 5_deg)
 			goto walkToBall;
 		}
@@ -70,11 +68,12 @@ option(CF)
 		transition
 		{
 			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
-				goto searchByHead;
+				goto search;
 			if(relativeBall().norm() < 500.f){
 				goto alignToGoal;
 			}
-			if(!ifBallInArea(5)){
+			
+			if(!ifBallInArea_CF()){
 				goto position;
 			}
 		}
@@ -88,12 +87,16 @@ option(CF)
 	{
 		transition
 		{
+			if(ifSideKick_CF()){
+				goto alignSideKickLeft;
+			}
+			
 		  if(theLibCodeRelease.timeSinceBallWasSeen > 7000)
-			goto searchByHead;
+			goto search;
 		  if(std::abs(target2Angle(kickTarget)) < 10_deg && std::abs(relativeBall().y()) < 100.f)
 			goto alignBehindBall;
 		
-		  if(!ifBallInArea(5)){
+		  if(!ifBallInArea_CF()){
 				goto position;
 		  }
 		  if(relativeBall().norm() > 500.f){
@@ -102,7 +105,7 @@ option(CF)
 		}
 		action
 		{
-		  getShootTarget(kickTarget);
+		  getFastShootTarget_CF(kickTarget);
 		  LookForward();
 		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(target2Angle(kickTarget), relativeBall().x() - 400.f, relativeBall().y()));
 		}
@@ -110,22 +113,22 @@ option(CF)
 	state(alignBehindBall){
 	  transition{
 		if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
-			goto searchByHead;
+			goto search;
 		if(theLibCodeRelease.between(relativeBall().y(), 35.f, 55.f)
            && theLibCodeRelease.between(relativeBall().x(), 150.f, 180.f)
          && std::abs(target2Angle(kickTarget)) <= 2_deg)
 	     {
-			 if(std::abs(kickTarget[1])<100)
+			 if(Transformation::fieldToRobot(theRobotPose,kickTarget).norm()<2000)
 			{
-				 goto kick;
+				 goto shortkick;
 			 }
 			 else{
-				 goto kick2;
+				 goto longkick;
 			 }
 				
 		 }
 			
-	    if(!ifBallInArea(5)){
+	    if(!ifBallInArea_CF()){
 			goto position;
 	    }
 		if(relativeBall().norm() > 500.f){
@@ -140,7 +143,7 @@ option(CF)
 		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(target2Angle(kickTarget), relativeBall().x() - 165.f, relativeBall().y() - 42.f)); 
 	  }
 	}
-	state(kick)
+	state(shortkick)
 	{
 		transition
 		{
@@ -151,10 +154,10 @@ option(CF)
 		{
 		  //printPoint(kickTarget,"kick");
 		  LookAtBall();
-		  SpecialAction(SpecialActionRequest::kickfoot);
+		  InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
 		}
 	}
-	state(kick2)
+	state(longkick)
 	{
 		transition
 		{
@@ -169,23 +172,103 @@ option(CF)
 		}
 	}
 	
+	state(alignSideKickLeft)
+    {
+		transition
+		{
+		  if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+			goto search;
+		  if(theLibCodeRelease.between(relativeBall().y(), -30.f, 0.f)
+			 && theLibCodeRelease.between(relativeBall().x(), 160.f, 190.f))
+			goto sideKickLeft;
+			
+			if(!ifBallInArea_CF()){
+				goto position;
+			}
+			if(relativeBall().norm() > 500.f){
+				goto turnToBall;
+			}
+		}
+		action
+		{
+		  LookAtBall();
+		  WalkToTarget(Pose2f(0.5, 0.5, 0.5), Pose2f(relativeBall().angle(), relativeBall().x() - 180.f, relativeBall().y() + 30.f));
+		}
+    }
+  
+  state(sideKickLeft)
+  {
+    transition
+    {
+      if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+        goto search;
+      if(state_time > 3000 || (state_time > 10 && action_done))
+        goto start;
+    }
+    action
+    {
+      LookAtBall();
+      InWalkKick(WalkKickVariant(WalkKicks::sidewardsInner, Legs::left), Pose2f(relativeBall().angle(), relativeBall().x()-100.f , relativeBall().y() - 80.f));
+    }
+  }
+  
+  state(alignSideKickRight)
+  {
+    transition
+    {
+      if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+        goto search;
+      if(theLibCodeRelease.between(relativeBall().y(), 0.f, 30.f)
+         && theLibCodeRelease.between(relativeBall().x(), 160.f, 190.f))
+        goto sideKickRight;
+		
+		if(!ifBallInArea_CF()){
+			goto position;
+		}
+		if(relativeBall().norm() > 500.f){
+			goto turnToBall;
+		}
+    }
+    action
+    {
+      LookAtBall();
+      WalkToTarget(Pose2f(20.f, 20.f, 20.f), Pose2f(relativeBall().angle(),relativeBall().x() - 180.f, relativeBall().y() - 30.f));
+    }
+  }
+
+  state(sideKickRight)
+  {
+    transition
+    {
+      if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+        goto search;
+      if(state_time > 3000 || (state_time > 10 && action_done))
+        goto start;
+    }
+    action
+    {
+      LookAtBall();
+      InWalkKick(WalkKickVariant(WalkKicks::sidewardsInner, Legs::right), Pose2f(relativeBall().angle(), relativeBall().x()-10.f , relativeBall().y() + 80.f));
+    }
+  }
+	
 	state(position){
 		transition{
-		  if(theLibCodeRelease.timeSinceBallWasSeen < 300 && ifBallInArea(5)){
+		  if(theLibCodeRelease.timeSinceBallWasSeen < 300 && ifBallInArea_CF()){
 			goto turnToBall;
 		  }
-		  if(Transformation::fieldToRobot(theRobotPose,getPositionTarget(5)).norm()<500.f){
+		  if(Transformation::fieldToRobot(theRobotPose,getPositionTarget_CF()).norm()<500.f){
 			goto positionSearch;
 		  }
 		}
 		action{
 			LookForward();
-			theMotionRequest=thePathPlanner.plan(getPositionTarget(5),Pose2f(0.5f,0.5f,0.5f),true);
+			theMotionRequest=thePathPlanner.plan(getPositionTarget_CF(),Pose2f(0.5f,0.5f,0.5f),true);
 		}
 	}
 	state(positionSearch){
 		transition{
-		  if(theLibCodeRelease.timeSinceBallWasSeen < 300 && ifBallInArea(5)){
+		  if(theLibCodeRelease.timeSinceBallWasSeen < 300 && ifBallInArea_CF()){
 			goto turnToBall;
 		  }
 		  if(theLibCodeRelease.timeSinceBallWasSeen > 3000 && state_time>10000){
@@ -197,13 +280,12 @@ option(CF)
 			  Stand();
 			}
 			else{
-			  LookForward();
-			  WalkAtRelativeSpeed(Pose2f(0.5f, 0.f, 0.f));
+				LookForBall();
 			}
 		}
 	}
 	
-	state(searchByHead)
+	state(search)
 	{
 		transition
 		{
@@ -225,7 +307,7 @@ option(CF)
 			goto start;
 		  if((Transformation::fieldToRobot(theRobotPose,pointPatrol[numPatrolNow]).norm()<500.f))
 			numPatrolNow=(numPatrolNow+1)%numPointPatrol;
-			goto searchByHead;
+			goto search;
 		}
 		action
 		{

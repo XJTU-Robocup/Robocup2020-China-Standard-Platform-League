@@ -260,7 +260,6 @@ int modeDecision22()
 }
 bool getKickAngle2(Vector2f& shootTarget){
 	const float step=2*(theFieldDimensions.yPosLeftGoal-100)/400;
-	const float shootLen=5000.f;
 	
 	Vector2f pointGoal(theFieldDimensions.xPosOpponentGroundline+ballRadius,0);
 	segment segFromBallToGoal(theBallModel.estimate.position,pointGoal);
