@@ -190,7 +190,7 @@ bool ifKickAvoidObstacle(Vector2f targetPoint){
 	return minDisBetweenSegmentAndObstacle(seg)>ballRadius;
 }
 
-float getMinDisToOppo(Vector2f relativePos){
+float getMinDisToOppo(Vector2f relativePos=Vector2f(0,0)){
 	float minDis=Inf,oneDis;
 	for(const auto& obstacle : theObstacleModel.obstacles){
 		if(obstacle.type==Obstacle::opponent || obstacle.type==Obstacle::someRobot){
@@ -211,14 +211,6 @@ bool getShootTarget(Vector2f& shootTarget){
 	std::vector<std::pair<float,Vector2f> > candidates;
 	std::pair<float,Vector2f> temp;
     
-    if((fieldBall()-shootTarget).norm()<shootLen){
-        segFromBallToGoal.end[1]=shootTarget;
-        if(minDisBetweenSegmentAndObstacle(segFromBallToGoal)>ballRadius){
-            return true;
-        }
-    }
-    
-    
 	for(float i=theFieldDimensions.yPosRightGoal;i<=theFieldDimensions.yPosLeftGoal;i+=step){
 		pointGoal[1]=i;
 		if((fieldBall()-pointGoal).norm()<shootLen){
@@ -237,7 +229,7 @@ bool getShootTarget(Vector2f& shootTarget){
 	return !candidates.empty();
 }
 
-bool getSwiftShootTarget(Vector2f& shootTarget){
+bool getFastShootTarget_CF(Vector2f& shootTarget){
 	const float step=2*theFieldDimensions.yPosLeftGoal/400;
 	const float shootLen=4000;
 	
@@ -246,22 +238,16 @@ bool getSwiftShootTarget(Vector2f& shootTarget){
 	std::vector<std::pair<float,Vector2f> > candidates;
 	std::pair<float,Vector2f> temp;
     
-    if((fieldBall()-shootTarget).norm()<shootLen){
-        segFromBallToGoal.end[1]=shootTarget;
-        if(minDisBetweenSegmentAndObstacle(segFromBallToGoal)>ballRadius){
-            return true;
-        }
-    }
     
-	for(float i=theFieldDimensions.yPosRightGoal;i<=theFieldDimensions.yPosLeftGoal;i+=step){
+	for(float i=theFieldDimensions.yPosRightGoal+50;i<=theFieldDimensions.yPosLeftGoal-50;i+=step){
 		pointGoal[1]=i;
 		if((fieldBall()-pointGoal).norm()<shootLen){
 			segFromBallToGoal.end[1]=pointGoal;
-            if(minDisBetweenSegmentAndObstacle(segFromBallToGoal)>ballRadius){
+            if(minDisBetweenSegmentAndObstacle(segFromBallToGoal)>1.25*ballRadius){
                 Vector2f v1,v2;
                 v1 = fieldBall()-pointGoal;
                 v2 = theRobotPose.translation-fieldBall();
-                temp.first = (v1[0]*v2[0]+v1[1]*v2[1])/(v1.norm()*v2.norm());
+                temp.first = abs(1-(v1[0]*v2[0]+v1[1]*v2[1])/(v1.norm()*v2.norm()));
                 temp.second = pointGoal;
                 candidates.push_back(temp);
             }

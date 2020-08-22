@@ -14,19 +14,19 @@ option(GK)
 
 	float robotx=theRobotPose.translation.x();
 	float roboty=theRobotPose.translation.y();
-	float v2=-200.f;
-	float v1=-100.f;
+	float v2=-300.f;
+	float v1=-150.f;
 	float v3=-50.f;
 	float dangerline=-2500;
 	float safeline=0;
 	float kickline=theFieldDimensions.xPosOwnPenaltyArea+500;
 	float guardliney=1800;
 	
-	initial_state(start)
+	/*initial_state(start)
   {
     transition
     {
-      if(state_time>10000)
+      if(state_time>5000)
 		  goto search;
 	  if(theLibCodeRelease.timeSinceBallWasSeen < 300 )
 	  {
@@ -43,6 +43,83 @@ option(GK)
     action
     {
       LookRoundFast();
+	  //Stand();
+    }
+  }*/
+  initial_state(start)
+  {
+	  transition
+	  {
+		if (state_time>5000)
+			goto afterstart1;
+			  
+		if(theLibCodeRelease.timeSinceBallWasSeen < 300 )
+		{
+		if(globalballv.x()<=v2)
+			goto warningstate;
+		if(globalballv.x()>v2)
+			goto readystate;
+		if(ball_absolute.x()>safeline)
+			goto safenow;
+		else
+			goto readystate;
+		}
+	  }
+	  action
+	  {
+		  LookRoundFast();
+		  //WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(), theFieldDimensions.xPosOwnGroundline-robotx,0-roboty));
+	  }
+  }
+  state(afterstart1)
+  {
+	  transition
+	  {
+			if (robotx<-4200.f&&robotx>-4400.f&& roboty>-50.f&& roboty<50.f)
+				goto afterstart2;
+				
+		if(theLibCodeRelease.timeSinceBallWasSeen < 300 )
+		{
+			if(globalballv.x()<=v2)
+				goto warningstate;
+			if(globalballv.x()>v2)
+				goto readystate;
+			if(ball_absolute.x()>safeline)
+				goto safenow;
+			else
+				goto readystate;
+		}
+	  }
+	  action
+	  {
+		  theHeadControlMode = HeadControl::lookForward;
+		  Vector2f target = Vector2f(-4300.f,0.f);
+		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(Transformation::fieldToRobot(theRobotPose,target).angle()
+		  , Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+	  }
+  }
+  state(afterstart2)
+  {
+	  transition
+    {
+      if(std::abs(theLibCodeRelease.angleToGoal)<10_deg)
+		  goto search;
+	  if(theLibCodeRelease.timeSinceBallWasSeen < 300 )
+	  {
+		if(globalballv.x()<=v2)
+			goto warningstate;
+		if(globalballv.x()>v2)
+			goto readystate;
+		if(ball_absolute.x()>safeline)
+			goto safenow;
+		else
+			goto readystate;
+	  }
+    }
+    action
+    {
+		WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal,0.f,0.f));
+		//LookRoundFast();
 	  //Stand();
     }
   }
@@ -77,7 +154,7 @@ option(GK)
 			goto search;
 		if(globalballv.x()<=v2)
 			goto warningstate;
-		if(ball_absolute.x()<safeline && globalballv.x()<v3)
+		if(ball_absolute.x()<safeline)
 			goto readystate;
 			
 	  }
@@ -85,7 +162,10 @@ option(GK)
     {
 		
 		LookAtBall();
-		WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theBallModel.estimate.position.angle(), theFieldDimensions.xPosOwnGroundline+200-robotx,0-roboty));
+		Vector2f target = Vector2f(-4300.f,0.f);
+		WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle()
+		, Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+		//WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(), theFieldDimensions.xPosOwnGroundline+200-robotx,0-roboty));
 		//theBallModel.estimate.position.angle()
     }
   }
@@ -109,8 +189,10 @@ option(GK)
 	  action
 	  {
 		  LookAtBall();
-		  float yy=ball_absolute.y()*1100/4500-roboty;
-		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal, theFieldDimensions.xPosOwnGroundline+200-robotx,yy));
+		  Vector2f target = Vector2f(-4300.f,ball_absolute.y()*1100/4500-roboty);
+		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle()
+		  , Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+		  //WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal, theFieldDimensions.xPosOwnGroundline+200-robotx,yy));
 		  //attention!!!!选位防守函数待加入
 		  //WalkToTarget
 	  }
@@ -135,8 +217,11 @@ option(GK)
 	  action
 	  {
 		  LookAtBall();
-		  float yy=ball_absolute.y()*1100/4500-roboty;
-		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal, theFieldDimensions.xPosOwnGroundline+200-robotx,yy));
+		  //float yy=ball_absolute.y()*1100/4500-roboty;
+		  Vector2f target = Vector2f(-4300.f,ball_absolute.y()*1100/4500-roboty);
+		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle()
+		  , Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+		  //WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal, theFieldDimensions.xPosOwnGroundline+200-robotx,yy));
 		  //attention!!!!选位防守函数待加入
 		  //WalkToTarget
 	  }
@@ -154,7 +239,10 @@ option(GK)
 	  action
 	  {
 		  theHeadControlMode = HeadControl::lookForward;
-		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f),Pose2f(theLibCodeRelease.angleToGoal,theFieldDimensions.xPosOwnPenaltyArea-robotx,0.f));
+		  Vector2f target = Vector2f(theFieldDimensions.xPosOwnPenaltyArea,0);
+		  WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal
+		  , Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+		  //WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f),Pose2f(theLibCodeRelease.angleToGoal,theFieldDimensions.xPosOwnPenaltyArea-robotx,0.f));
 	  }
   }
   
@@ -233,12 +321,12 @@ option(GK)
 			goto walkToSearch;
 		if(ball_absolute.y()<0)
 		{
-			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-robotx) < 100.f && std::abs(-900.f-roboty) < 100.f)
+			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx) < 100.f && std::abs(-900.f-roboty) < 100.f)
 				goto keepGuard2;
 		}
 		if(ball_absolute.y()>0)
 		{
-			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-robotx) < 100.f && std::abs(900.f-roboty) < 100.f)
+			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx) < 100.f && std::abs(900.f-roboty) < 100.f)
 				goto keepGuard2;
 		}
 	  }
@@ -246,10 +334,21 @@ option(GK)
 	  {
 		LookAtBall();
 		if(ball_absolute.y()<0)
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-30_deg, theFieldDimensions.xPosOwnPenaltyArea-robotx, -900.f-roboty));
+		{
+			Vector2f target = Vector2f(theFieldDimensions.xPosOwnPenaltyArea-400.f,-900.f);
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-40_deg
+			, Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+			//WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-30_deg, theFieldDimensions.xPosOwnPenaltyArea-robotx, -900.f-roboty));
+		}
 		if(ball_absolute.y()>0)
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal+30_deg, theFieldDimensions.xPosOwnPenaltyArea-robotx, 900.f-roboty));
-	  }
+		{
+			Vector2f target = Vector2f(theFieldDimensions.xPosOwnPenaltyArea-400.f,900.f);
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal+40_deg
+			, Transformation::fieldToRobot(theRobotPose,target).x(),Transformation::fieldToRobot(theRobotPose,target).y()));
+			//WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal+30_deg, theFieldDimensions.xPosOwnPenaltyArea-robotx, 900.f-roboty));
+	 
+		}
+	}
   }
   
   state(keepGuard2)
@@ -264,24 +363,14 @@ option(GK)
 			goto kickball;
 		if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
 			goto walkToSearch;
-		if(ball_absolute.y()<0)
-		{
-			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx) < 50.f && std::abs(ball.angle())<10_deg)
-				goto keepGuard3;
-		}
-		if(ball_absolute.y()>0)
-		{
-			if(std::abs(theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx) < 50.f && std::abs(ball.angle())<10_deg)
-				goto keepGuard3;
-		}
+			
+		if(std::abs(ball.angle())<10_deg)
+			goto keepGuard3;
 	  }
 	  action
 	  {
 		LookAtBall();
-		if(ball_absolute.y()<0)
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(), theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx, -900.f-roboty));
-		if(ball_absolute.y()>0)
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(), theFieldDimensions.xPosOwnPenaltyArea-400.f-robotx, 900.f-roboty));
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(),  0.f, 0.f));
 	  }
   }
   state(keepGuard3)
@@ -314,14 +403,15 @@ option(GK)
 		goto keepGuard;
 	  if(theLibCodeRelease.timeSinceBallWasSeen > 2000)
         goto walkToSearch;
-      if(myball.norm() < 500.f)
+      if(std::abs(ball.x() - 400.f) < 60.f && std::abs(ball.y()) < 60.f 
+	  && std::abs(ball.angle())<5_deg)
         goto alignToGoal;
 	  
     }
     action
     {
       LookAtBall();
-      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theBallModel.estimate.position.angle(),theBallModel.estimate.position.x() - 400.f, theBallModel.estimate.position.y()));
+      WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(ball.angle(),theBallModel.estimate.position.x() - 400.f, theBallModel.estimate.position.y()));
     }
   }
   
@@ -357,7 +447,7 @@ option(GK)
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-50_deg, theBallModel.estimate.position.x() - 400.f, theBallModel.estimate.position.y()));
 		//等待加入踢球角度选择函数
 	  }
-  }
+  } 
   state(alignBehindBall)
   {
     transition
@@ -370,15 +460,15 @@ option(GK)
 			goto keepGuard;
 		if(ball_absolute.y()>=0)
 		{
-			if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 35.f, 55.f)
-				&& theLibCodeRelease.between(theBallModel.estimate.position.x(), 155.f, 175.f)
+			if(theLibCodeRelease.between(ball.y(), 35.f, 55.f)
+				&& theLibCodeRelease.between(ball.x(), 155.f, 175.f)
 				&& std::abs(theLibCodeRelease.angleToGoal+50_deg) < 5_deg)
 			goto kick;
 		}
 		if(ball_absolute.y()<0)
 		{
-			if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 35.f, 55.f)
-				&& theLibCodeRelease.between(theBallModel.estimate.position.x(), 155.f, 175.f)
+			if(theLibCodeRelease.between(ball.y(), 35.f, 55.f)
+				&& theLibCodeRelease.between(ball.x(), 155.f, 175.f)
 				&& std::abs(theLibCodeRelease.angleToGoal-50_deg) < 5_deg)
 			goto kick;
 		}
@@ -387,9 +477,9 @@ option(GK)
     {
 		LookAtBall();
 		if(ball_absolute.y()>=0)
-			WalkToTarget(Pose2f(-0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal+50_deg, theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
+			WalkToTarget(Pose2f(-0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal+50_deg, ball.x() - 165.f, ball.y() - 42.f));
 		if(ball_absolute.y()<0)
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-50_deg, theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(theLibCodeRelease.angleToGoal-50_deg, ball.x() - 165.f, ball.y() - 42.f));
 		
 		//WalkToTarget(Pose2f(80.f, 80.f, 80.f), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 150.f, theBallModel.estimate.position.y() - 30.f));
     }
@@ -405,7 +495,7 @@ option(GK)
     action
     {
 		LookAtBall();
-		InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left), Pose2f(theLibCodeRelease.angleToGoal, theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
+		InWalkKick(WalkKickVariant(WalkKicks::forward, Legs::left), Pose2f(ball.angle(), theBallModel.estimate.position.x() - 165.f, theBallModel.estimate.position.y() - 42.f));
     }
   }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -11,7 +11,7 @@ option(LookAtBall)
 		double alfa=ball.angle();
 			//球在相对坐标系中与机器人x方向的夹角（弧度值）
 		//const float h =alfa*1.5/(3.14/2);
-      SetHeadPanTilt((float) alfa , (float) 0.3f , 150_deg);
+      SetHeadPanTilt((float) alfa , (float) 0.38f , 150_deg);
     }
   }
 }
