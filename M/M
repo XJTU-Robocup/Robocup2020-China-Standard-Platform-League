@@ -83,6 +83,10 @@ option(M)
     {
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
         goto searchByHead;
+      if(theBallModel.estimate.position.norm()>1000.f 
+      && (globalBall().x()>1800.f || globalBall().x()<-1800.f
+      || globalBall().y()>100.f || globalBall().y()<-3000.f))
+        goto walkToTarget;
       if(theBallModel.estimate.position.norm() < 500.f)
         goto alignToGoal;
     }
@@ -150,10 +154,6 @@ option(M)
     {
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
         goto stateDecision;
-      if(theBallModel.estimate.position.y()) > 500.f 
-      && (globalBall().x()>1800.f || globalBall().x()<-1800.f
-      || globalBall().y()>100.f || globalBall().y()<-3000.f))
-          goto walkToTarget;
       if(std::abs(theLibCodeRelease.angleToGoal) < 10_deg && std::abs(theBallModel.estimate.position.y()) < 100.f)
         goto alignBehindBall;        
       if(theBallModel.estimate.position.norm()>1000.f)
@@ -310,9 +310,11 @@ option(M)
   {
     transition
     {
-      if(globalBall().x()>500.f)
+      if(globalBall().x()>500.f && globalBall().x()<2400.f)
         goto walkToBall;
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
+        goto stateDecision;
+       if(theBallModel.estimate.position.norm() > 1000.f)
         goto stateDecision;
       if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 20.f, 50.f)
          && theLibCodeRelease.between(theBallModel.estimate.position.x(), 140.f, 170.f))
@@ -347,6 +349,8 @@ option(M)
     transition
     {
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
+        goto stateDecision;
+      if(theBallModel.estimate.position.norm() > 1000.f)
         goto stateDecision;
       if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 20.f, 50.f)
          && theLibCodeRelease.between(theBallModel.estimate.position.x(), 140.f, 170.f))
@@ -384,6 +388,8 @@ option(M)
     transition
     {
       if(theLibCodeRelease.timeSinceBallWasSeen > 4000.f)
+        goto stateDecision;
+      if(theBallModel.estimate.position.norm() > 1000.f)
         goto stateDecision;
       if(theLibCodeRelease.between(theBallModel.estimate.position.y(), 20.f, 50.f)
          && theLibCodeRelease.between(theBallModel.estimate.position.x(), 140.f, 170.f))
