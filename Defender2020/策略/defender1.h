@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/20 11:41` @author: Daiyilong
+//parameter　↓↓↓`8/29 18:13` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -382,6 +382,9 @@ bool getPassAngle(float& passAngle)
   return !candidateOne.empty();
 }
 
+float getPassAngleD(){
+	
+}
 
 option(defender1)
 {
@@ -1015,6 +1018,9 @@ option(defender1)
 					&& theLibCodeRelease.between(rBall.x(), 150.f, 175.f)
 					/*&& std::abs(passAngle) < 2_deg*/)
 				goto pass;
+			
+			if(std::abs(rBall.norm()) > 600.f)
+				goto prepareToRescue;
 		}
 		action
 		{
