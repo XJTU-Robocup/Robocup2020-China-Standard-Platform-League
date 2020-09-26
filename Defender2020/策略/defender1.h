@@ -1,4 +1,4 @@
-//parameter　↓↓↓`8/29 18:13` @author: Daiyilong
+//parameter　↓↓↓`9/26 15:52` @author: Daiyilong
 //basic parameters of the field:
 float passAngle=100;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
@@ -542,10 +542,9 @@ option(defender1)
 			if(toRobot(getDefendPoint(gBall, selfLocation)).norm()>=100)
 			{
 				LookAtBall();
-				Pose2f target;				//如果需要避障
-				target.rotation = toRobot(getDefendPoint(gBall, selfLocation)).angle();
-				target.translation = getDefendPoint(gBall, selfLocation);
-				theMotionRequest = thePathPlanner.plan(target,Pose2f(0.5f,0.5f,0.5f),false);
+				Vector2f rDefendBall;
+				rDefendBall = toRobot(getDefendPoint(gBall, selfLocation));
+				WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rDefendBall.angle(), rDefendBall.x(), rDefendBall.y()));
 			}
 			else
 			{
@@ -579,10 +578,9 @@ option(defender1)
 			HeadControlMode(HeadControl::lookForward);
 			Vector2f dop = getNearestOppInArea(defendOpponentArea);
 			dop = Vector2f(dop.x()-80.f, dop.y());
-			Pose2f target;				
-			target.rotation = toRobot(dop).angle();
-			target.translation = dop;
-			theMotionRequest = thePathPlanner.plan(target,Pose2f(0.5f,0.5f,0.5f),false);
+			Vector2f rDop;
+			rDop = toRobot(dop);
+			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rDop.angle(), rDop.x(), rDop.y()));
 		}
 		
 	}
