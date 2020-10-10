@@ -1,6 +1,9 @@
-//parameter　↓↓↓`9/26 15:52` @author: Daiyilong
+//parameter　↓↓↓`/10 15:52` @author: Daiyilong
 //basic parameters of the field:
-float passAngle=100;
+float passAngle = 100;
+float alignLoseBallTime = 7000.f;
+float lookBackLoseBallTime = 10000.f;
+float normalLoseBallTime = 3000.f;
 const Vector2f frontLeft = Vector2f(4500.f, 3000.f);
 const Vector2f frontRight = Vector2f(4500.f, -3000.f);
 const Vector2f midMid = Vector2f(0.f, 0.f);
@@ -458,7 +461,7 @@ option(defender1)
 		
 		transition
 		{
-			if(ifBallLoseSight())
+			if(theLibCodeRelease.timeSinceBallWasSeen > lookBackLoseBallTime)
 				goto searchForBall;
 			
 			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
@@ -563,7 +566,7 @@ option(defender1)
 		
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen >15000)
+			if(theLibCodeRelease.timeSinceBallWasSeen > 10000)
 				goto searchForBall;
 			
 			if(judgePosition(gBall,	defendBallArea) && !judgePosition(gBall, keeperArea))
@@ -749,7 +752,7 @@ option(defender1)
 		
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+			if(theLibCodeRelease.timeSinceBallWasSeen > alignLoseBallTime)
 				goto patrolToHind;
 				
 			if(getPassAngle(passAngle))
@@ -803,7 +806,7 @@ option(defender1)
 
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+			if(theLibCodeRelease.timeSinceBallWasSeen > alignLoseBallTime)
 				goto patrolToHind;
 				
 			if(theLibCodeRelease.between(rBall.y(), 20.f, 60.f)
@@ -871,7 +874,7 @@ option(defender1)
 		transition
 		{
 			
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+			if(theLibCodeRelease.timeSinceBallWasSeen > alignLoseBallTime)
 				goto searchForBall;
 				
 			if(theLibCodeRelease.between(rBall.y(), -30.f, 0.f)
@@ -903,7 +906,7 @@ option(defender1)
 	{
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+			if(theLibCodeRelease.timeSinceBallWasSeen > normalLoseBallTime)
 				goto searchForBall;
 			
 			if(state_time > 4000 || (state_time > 10 && action_done))
@@ -926,7 +929,7 @@ option(defender1)
 		
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+			if(theLibCodeRelease.timeSinceBallWasSeen > normalLoseBallTime)
 				goto searchForBall;
 				
 			if(theLibCodeRelease.between(rBall.y(), 0.f, 30.f)
@@ -960,7 +963,7 @@ option(defender1)
 		transition
 		{
 			
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000.f)
+			if(theLibCodeRelease.timeSinceBallWasSeen > normalLoseBallTime)
 				goto searchForBall;
 			
 			if(state_time > 4000 || (state_time > 10 && action_done))
@@ -984,7 +987,7 @@ option(defender1)
 		transition
 		{
 			
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+			if(theLibCodeRelease.timeSinceBallWasSeen > normalLoseBallTime)
 				goto patrolToHind;
 				
 			if(judgePosition(gBall, globalBallSafeArea) && !ifAnyOppInArea(defendOpponentArea))
@@ -1009,7 +1012,7 @@ option(defender1)
 	{
 		transition
 		{
-			if(theLibCodeRelease.timeSinceBallWasSeen > 3000)
+			if(theLibCodeRelease.timeSinceBallWasSeen > normalLoseBallTime)
 				goto patrolToHind;
 				
 			if(theLibCodeRelease.between(rBall.y(), 35.f, 55.f)
