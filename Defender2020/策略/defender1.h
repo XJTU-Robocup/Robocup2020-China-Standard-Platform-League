@@ -1,4 +1,7 @@
 //parameter　↓↓↓`/10 15:52` @author: Daiyilong
+/*
+* Added discrete(smarter) searching for ball 2020.10.10 21:27
+*/
 //basic parameters of the field:
 float passAngle = 100;
 float alignLoseBallTime = 7000.f;
@@ -446,12 +449,8 @@ option(defender1)
 		action
 		{
 			Stand();
-			LookRound();
-			if(state_time > 3000)
-			{
-				HeadControlMode(HeadControl::lookForward);
-				WalkAtRelativeSpeed(Pose2f(1.f, 0.f, 0.f));
-			}
+			LookForBall(0.3,0.5);
+			
 		}
 		
 	}
