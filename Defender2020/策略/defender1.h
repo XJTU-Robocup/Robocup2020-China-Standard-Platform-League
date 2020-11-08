@@ -1,7 +1,4 @@
 //parameter　↓↓↓`/10 15:52` @author: Daiyilong
-/*
-* Added discrete(smarter) searching for ball 2020.10.10 21:27
-*/
 //basic parameters of the field:
 float passAngle = 100;
 float alignLoseBallTime = 7000.f;
@@ -18,6 +15,7 @@ const Vector2f backRight = Vector2f(-4500.f, -3000.f);
 const Vector2f globalPatrolLeft = Vector2f(-3400.f, 500.f);
 const Vector2f globalPatrolRight = Vector2f(-3400.f, -500.f);
 const Vector2f quickShotPoint = Vector2f(4500.f, 0.f);
+const Pose2f defaultSpeed = Pose2f(0.8f,0.8f,0.8f);
 //basic parameters of ball and robots:
 Vector2f rBall;	//i.e. relative ball
 Vector2f gBall;	 //i.e. global ball
@@ -428,7 +426,7 @@ option(defender1)
 		
 		action
 		{
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(0_deg, 0.f,0));
+			WalkToTarget(defaultSpeed, Pose2f(0_deg, 0.f,0));
 		}
 		
 	}
@@ -448,7 +446,7 @@ option(defender1)
 		
 		action
 		{
-			Stand();
+			//Stand();
 			LookForBall(0.3,0.5);
 			
 		}
@@ -482,7 +480,7 @@ option(defender1)
 				patrolPoint = patrolRight;
 			
 			HeadControlMode(HeadControl::lookForward);
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), 0.f, 0.f));
 			if(patrolPoint.norm() >= 200.f)
 			{
 				//OUTPUT_TEXT(patrolPoint.norm());
@@ -491,7 +489,7 @@ option(defender1)
 				target.rotation = std::abs(patrolPoint.angle());
 				target.translation = Transformation::robotToField(theRobotPose, patrolPoint);
 				Vector2f rtarget = patrolPoint;
-				WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f),Pose2f(0.f,rtarget));
+				WalkToTarget(defaultSpeed,Pose2f(0.f,rtarget));
 				//theMotionRequest = thePathPlanner.plan(target,Pose2f(0.8f,0.8f,0.8f),false);
 			}
 			else //看向球之后站立
@@ -500,7 +498,7 @@ option(defender1)
 				LookAtBall();
 				if(std::abs(rBall.angle()) >= 5_deg)
 				{
-					WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
+					WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), 0.f, 0.f));
 				}
 				else
 				{
@@ -541,21 +539,30 @@ option(defender1)
 		
 		action
 		{	
+			/* Old
 			if(toRobot(getDefendPoint(gBall, selfLocation)).norm()>=100)
 			{
+				
 				LookAtBall();
 				Vector2f rDefendBall;
 				rDefendBall = toRobot(getDefendPoint(gBall, selfLocation));
-				WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rDefendBall.angle(), rDefendBall.x(), rDefendBall.y()));
+				WalkToTarget(defaultSpeed, Pose2f(rDefendBall.angle(), rDefendBall.x(), rDefendBall.y()));
+				
+				
 			}
 			else
 			{
 				LookAtBall();
 				if(std::abs(rBall.angle()) >= 5_deg)
-					WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
+					WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), 0.f, 0.f));
 				else
 					Stand();
 			}
+			 * */
+			// Changed 2020 11 08 Steven
+			Vector2f gDefendBall = getDefendPoint(gBall,selfLocation);
+			WalkToTargetWithTurn(gDefendBall);
+				
 			
 		}
 	}
@@ -582,7 +589,7 @@ option(defender1)
 			dop = Vector2f(dop.x()-80.f, dop.y());
 			Vector2f rDop;
 			rDop = toRobot(dop);
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rDop.angle(), rDop.x(), rDop.y()));
+			WalkToTarget(defaultSpeed, Pose2f(rDop.angle(), rDop.x(), rDop.y()));
 		}
 		
 	}
@@ -629,7 +636,7 @@ option(defender1)
 		action
 		{	
 			HeadControlMode(HeadControl::lookForward);
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), 0.f, 0.f));
 		
 		　	Pose2f target;
 			target.rotation=rBall.angle();
@@ -647,7 +654,7 @@ option(defender1)
 		
 		transition
 		{
-			if(ifBallLoseSight())
+			if(theLibCodeRelease.timeSinceBallWasSeen >8000)
 				goto searchForBall;
 				
 			if(judgePosition(gBall, globalBallSafeArea) && ifAnyOppInArea(defendOpponentArea))
@@ -690,10 +697,17 @@ option(defender1)
 		
 		action
 		{
-			HeadControlMode(HeadControl::lookForward);
+			
+			//HeadControlMode(HeadControl::lookForward);
 			LookAtBall();
-			if(getPassAngle(passAngle))
-				WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(passAngle, rBall.x() - 300.f, rBall.y()));
+			if(selfLocation.x() >= gBall.x() && selfLocation.y() >= gBall.y()){
+				WalkToTarget(defaultSpeed, Pose2f(0.f, toRobot(Vector2f(gBall.x() - 150.f,gBall.y()+250.f))));
+			}
+			else if(selfLocation.x() >= gBall.x() && selfLocation.y() < gBall.y()){
+				WalkToTarget(defaultSpeed, Pose2f(0.f, toRobot(Vector2f(gBall.x() - 150.f,gBall.y()-250.f))));
+			}
+			else if(getPassAngle(passAngle))
+				WalkToTarget(defaultSpeed, Pose2f(passAngle, rBall.x() - 300.f, rBall.y()));
 		}
 		
 	}
@@ -739,12 +753,17 @@ option(defender1)
 		action
 		{
 			HeadControlMode(HeadControl::lookForward);
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), 0.f, 0.f));
 			theHeadControlMode = HeadControl::lookForward;
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y()));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), rBall.x() - 165.f, rBall.y()));
 		}
 		
 	}
+	
+	
+	/*
+	 * getPassAngle 可能由于计算量过大导致掉帧 
+	 */
 	
 	state(alignToPass)
 	{
@@ -792,7 +811,7 @@ option(defender1)
 			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
 			//HeadControlMode(HeadControl::lookDown);
 			if(getPassAngle(passAngle))
-				WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(passAngle, rBall.x() - 165.f, rBall.y() - 42.f));
+				WalkToTarget(defaultSpeed, Pose2f(passAngle, rBall.x() - 165.f, rBall.y() - 42.f));
 			//OUTPUT_TEXT(rBall.x());
 			//OUTPUT_TEXT(rBall.y());
 		
@@ -895,7 +914,7 @@ option(defender1)
 		{
 			
 			theHeadControlMode = HeadControl::lookForward;
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), rBall.x() - 180.f, rBall.y() + 30.f));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), rBall.x() - 180.f, rBall.y() + 30.f));
 			
 		}
 		
@@ -950,7 +969,7 @@ option(defender1)
 		{
 			//OUTPUT_TEXT(getNearestOppR().norm());
 			theHeadControlMode = HeadControl::lookForward;
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), rBall.x() - 180.f, rBall.y() - 30.f));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), rBall.x() - 180.f, rBall.y() - 30.f));
 			
 		}
 		
@@ -1003,7 +1022,16 @@ option(defender1)
 			//OUTPUT_TEXT(getNearestOppR().norm());
 			HeadControlMode(HeadControl::lookForward);
 			LookAtBall();
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 400.f, rBall.y()));
+			if(selfLocation.x() >= gBall.x() && selfLocation.y() >= gBall.y()){
+				WalkToTarget(defaultSpeed, Pose2f(0.f, toRobot(Vector2f(gBall.x() - 150.f,gBall.y()+250.f))));
+			}
+			else if(selfLocation.x() >= gBall.x() && selfLocation.y() < gBall.y()){
+				WalkToTarget(defaultSpeed, Pose2f(0.f, toRobot(Vector2f(gBall.x() - 150.f,gBall.y()-250.f))));
+			}
+			else
+			{
+				WalkToTarget(defaultSpeed, Pose2f(getQuickShotAngle(), rBall.x() - 400.f, rBall.y()));
+			}
 		}
 	}
 	
@@ -1026,8 +1054,8 @@ option(defender1)
 		{
 
 			//HeadControlMode(HeadControl::lookForward);
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(rBall.angle(), 0.f, 0.f));
-			WalkToTarget(Pose2f(0.5f, 0.5f, 0.5f), Pose2f(getQuickShotAngle(), rBall.x() - 165.f, rBall.y() - 42.f));
+			WalkToTarget(defaultSpeed, Pose2f(rBall.angle(), 0.f, 0.f));
+			WalkToTarget(defaultSpeed, Pose2f(getQuickShotAngle(), rBall.x() - 165.f, rBall.y() - 42.f));
 		}
 	}
 
